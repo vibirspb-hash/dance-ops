@@ -69,7 +69,6 @@ export default function Page() {
     ]);
   }
 
-  // ==================== EDITING ====================
   function startEditing(dayId: number, type: any, currentValue: string, eventId?: number) {
     setEditing({ dayId, type, eventId });
     setEditValue(currentValue);
@@ -77,7 +76,7 @@ export default function Page() {
 
   function saveEdit() {
     if (!editing) return;
-    // ... (тот же saveEdit что был раньше)
+
     setDays((prev) =>
       prev.map((day) => {
         if (day.id !== editing.dayId) return day;
@@ -105,7 +104,6 @@ export default function Page() {
     setEditValue("");
   }
 
-  // CRUD функции (addDay, addEvent, deleteEvent, onDrop) — оставил без изменений
   function addDay() {
     const date = prompt("Введите дату");
     if (!date) return;
@@ -173,7 +171,7 @@ export default function Page() {
           minHeight: 700,
           background: "#ffffff",
           borderRadius: 24,
-          padding: 24,
+          padding: 28,
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
         }}
@@ -186,70 +184,119 @@ export default function Page() {
             background: "#1e2937",
             color: "white",
             borderRadius: 16,
-            padding: "12px 26px",
+            padding: "14px 28px",
             fontWeight: 700,
-            fontSize: 22,
-            marginBottom: 32,
+            fontSize: 23,
+            marginBottom: 36,
             cursor: "pointer",
+            letterSpacing: "-0.02em",
           }}
         >
           {editing?.dayId === day.id && editing.type === teamType ? (
-            <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 22, fontWeight: 700 }} />
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+              autoFocus
+              style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 23, fontWeight: 700 }}
+            />
           ) : (
             teamName
           )}
         </div>
 
-        <button onClick={() => addEvent(day.id, team)} style={{ float: "right", border: "none", background: "#4f46e5", color: "white", borderRadius: 12, padding: "12px 20px", cursor: "pointer", fontSize: 18 }}>
+        <button
+          onClick={() => addEvent(day.id, team)}
+          style={{
+            float: "right",
+            border: "none",
+            background: "#4f46e5",
+            color: "white",
+            borderRadius: 12,
+            padding: "12px 20px",
+            cursor: "pointer",
+            fontSize: 18,
+            fontWeight: 600,
+          }}
+        >
           +
         </button>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 32, clear: "both" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 36, clear: "both" }}>
           {items.map((event, index) => (
             <div key={event.id}>
-              {/* Карточка события */}
               <div
                 draggable
                 onDragStart={() => setDragged({ event, dayId: day.id })}
                 style={{
                   background: "#ffffff",
                   borderRadius: 20,
-                  padding: 24,
+                  padding: 28,
                   cursor: "grab",
                   border: "2px solid #e0e7ff",
                   boxShadow: "0 8px 25px rgba(79, 70, 229, 0.09)",
                   position: "relative",
                 }}
               >
-                <button onClick={() => deleteEvent(day.id, team, event.id)} style={{ position: "absolute", top: 16, right: 16, border: "none", background: "#fee2e2", color: "#ef4444", borderRadius: 8, padding: "6px 10px" }}>
+                <button
+                  onClick={() => deleteEvent(day.id, team, event.id)}
+                  style={{ position: "absolute", top: 18, right: 18, border: "none", background: "#fee2e2", color: "#ef4444", borderRadius: 8, padding: "6px 10px", cursor: "pointer" }}
+                >
                   🗑
                 </button>
 
-                <div onClick={() => startEditing(day.id, "time", event.time, event.id)} style={{ fontSize: 30, fontWeight: 800, marginBottom: 10, cursor: "pointer" }}>
-                  {editing?.eventId === event.id && editing.type === "time" ? <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ fontSize: 30, fontWeight: 800, border: "none", background: "transparent", outline: "none", width: "100%" }} /> : event.time}
+                {/* Время */}
+                <div
+                  onClick={() => startEditing(day.id, "time", event.time, event.id)}
+                  style={{ fontSize: 34, fontWeight: 800, marginBottom: 12, cursor: "pointer", color: "#1e2937" }}
+                >
+                  {editing?.eventId === event.id && editing.type === "time" ? (
+                    <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ fontSize: 34, fontWeight: 800, border: "none", background: "transparent", outline: "none", width: "100%" }} />
+                  ) : (
+                    event.time
+                  )}
                 </div>
 
-                <div onClick={() => startEditing(day.id, "place", event.place || "", event.id)} style={{ fontSize: 16.5, color: "#334155", marginBottom: 12, fontWeight: 600, cursor: "pointer" }}>
-                  {editing?.eventId === event.id && editing.type === "place" ? <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus placeholder="Место проведения" style={{ width: "100%", border: "none", background: "transparent", outline: "none" }} /> : event.place ? `📍 ${event.place}` : <span style={{ color: "#94a3b8" }}>+ добавить место</span>}
+                {/* Место */}
+                <div
+                  onClick={() => startEditing(day.id, "place", event.place || "", event.id)}
+                  style={{ fontSize: 17.5, color: "#334155", marginBottom: 14, fontWeight: 600, cursor: "pointer", minHeight: 28 }}
+                >
+                  {editing?.eventId === event.id && editing.type === "place" ? (
+                    <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus placeholder="Место проведения" style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 17.5 }} />
+                  ) : event.place ? (
+                    `📍 ${event.place}`
+                  ) : (
+                    <span style={{ color: "#94a3b8", fontStyle: "italic" }}>+ добавить место</span>
+                  )}
                 </div>
 
-                <div onClick={() => startEditing(day.id, "title", event.title, event.id)} style={{ fontSize: 20, lineHeight: 1.4, fontWeight: 600, cursor: "pointer" }}>
-                  {editing?.eventId === event.id && editing.type === "title" ? <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ fontSize: 20, fontWeight: 600, border: "none", background: "transparent", outline: "none", width: "100%" }} /> : event.title}
+                {/* Название выступления */}
+                <div
+                  onClick={() => startEditing(day.id, "title", event.title, event.id)}
+                  style={{ fontSize: 21.5, lineHeight: 1.4, fontWeight: 600, cursor: "pointer", color: "#1e2937" }}
+                >
+                  {editing?.eventId === event.id && editing.type === "title" ? (
+                    <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ fontSize: 21.5, fontWeight: 600, border: "none", background: "transparent", outline: "none", width: "100%" }} />
+                  ) : (
+                    event.title
+                  )}
                 </div>
               </div>
 
               {/* Road */}
               {index !== items.length - 1 && (
-                <div onClick={() => startEditing(day.id, "road", event.road || "", event.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 24, cursor: "pointer" }}>
-                  {/* road блок */}
+                <div onClick={() => startEditing(day.id, "road", event.road || "", event.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 28, cursor: "pointer" }}>
                   {editing?.eventId === event.id && editing.type === "road" ? (
-                    <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ background: "#fef3c7", border: "2px solid #f59e0b", color: "#b45309", padding: "8px 24px", borderRadius: 999, fontWeight: 700, fontSize: 16 }} />
+                    <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ background: "#fef3c7", border: "2px solid #f59e0b", color: "#b45309", padding: "8px 26px", borderRadius: 999, fontWeight: 700, fontSize: 16 }} />
                   ) : event.road && event.road !== "Время в пути" ? (
-                    <div style={{ background: "#f59e0b", color: "white", padding: "8px 24px", borderRadius: 999, fontWeight: 700 }}>{event.road}</div>
+                    <div style={{ background: "#f59e0b", color: "white", padding: "8px 26px", borderRadius: 999, fontWeight: 700, fontSize: 16 }}>{event.road}</div>
                   ) : (
-                    <div style={{ background: "#fef3c7", color: "#d97706", padding: "8px 24px", borderRadius: 999, fontWeight: 600, border: "2px dashed #fbbf24" }}>+ время в пути</div>
+                    <div style={{ background: "#fef3c7", color: "#d97706", padding: "8px 26px", borderRadius: 999, fontWeight: 600, fontSize: 15, border: "2px dashed #fbbf24" }}>+ время в пути</div>
                   )}
-                  <div style={{ width: 3, height: 70, background: "#fcd34d", margin: "10px 0" }} />
+                  <div style={{ width: 3, height: 75, background: "#fcd34d", margin: "10px 0" }} />
                 </div>
               )}
             </div>
@@ -260,45 +307,39 @@ export default function Page() {
   }
 
   return (
-    <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, Arial, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1e2937", margin: 0 }}>🎭 Dance Ops</h1>
-        <button onClick={addDay} style={{ padding: "12px 20px", borderRadius: 14, border: "none", background: "#4f46e5", color: "white", fontWeight: 600, cursor: "pointer" }}>
+    <div style={{ padding: "24px 16px", background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, -apple-system, Arial, sans-serif" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, flexWrap: "wrap", gap: 16 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: "#1e2937", margin: 0 }}>🎭 Dance Ops</h1>
+        <button onClick={addDay} style={{ padding: "14px 24px", borderRadius: 16, border: "none", background: "#4f46e5", color: "white", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>
           + Добавить дату
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 60 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 70 }}>
         {days.map((day) => (
           <div key={day.id}>
-            {/* Дата */}
             <div
               onClick={() => startEditing(day.id, "date", day.date)}
               style={{
                 display: "inline-block",
                 background: "#1e2937",
                 color: "white",
-                borderRadius: 16,
-                padding: "12px 28px",
+                borderRadius: 18,
+                padding: "14px 32px",
                 fontWeight: 800,
-                fontSize: 30,
-                marginBottom: 24,
+                fontSize: 34,
+                marginBottom: 32,
                 cursor: "pointer",
               }}
             >
               {editing?.dayId === day.id && editing.type === "date" ? (
-                <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 30, fontWeight: 800 }} />
+                <input type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 34, fontWeight: 800 }} />
               ) : (
                 day.date
               )}
             </div>
 
-            {/* Колонки */}
-            <div style={{
-              display: "flex",
-              flexDirection: window.innerWidth < 900 ? "column" : "row", // Простой способ
-              gap: 24,
-            }}>
+            <div style={{ display: "flex", flexDirection: window.innerWidth < 900 ? "column" : "row", gap: 28 }}>
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
