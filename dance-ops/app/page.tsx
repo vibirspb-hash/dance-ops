@@ -29,10 +29,17 @@ const textBase: React.CSSProperties = {
   textRendering: "optimizeLegibility",
 };
 
+const inputStyle: React.CSSProperties = {
+  fontFamily: "system-ui, -apple-system, Helvetica, Arial",
+  fontSize: 16,
+  padding: 6,
+  border: "1px solid #ddd",
+  borderRadius: 8,
+  outline: "none",
+};
+
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
-  const [dragged, setDragged] = useState<{ event: EventType; dayId: number } | null>(null);
-
   const [editing, setEditing] = useState<{
     dayId: number;
     type: "date" | "team1" | "team2" | "time" | "title" | "place" | "road";
@@ -69,7 +76,6 @@ export default function Page() {
               title: "Название выступления",
               time: "17:30",
               place: "Место проведения",
-              road: "Время в пути",
             },
           ],
           second: [
@@ -97,9 +103,14 @@ export default function Page() {
       prev.map((day) => {
         if (day.id !== editing.dayId) return day;
 
-        if (editing.type === "date") return { ...day, date: editValue || day.date };
-        if (editing.type === "team1") return { ...day, firstTeamName: editValue || day.firstTeamName };
-        if (editing.type === "team2") return { ...day, secondTeamName: editValue || day.secondTeamName };
+        if (editing.type === "date")
+          return { ...day, date: editValue || day.date };
+
+        if (editing.type === "team1")
+          return { ...day, firstTeamName: editValue || day.firstTeamName };
+
+        if (editing.type === "team2")
+          return { ...day, secondTeamName: editValue || day.secondTeamName };
 
         return {
           ...day,
@@ -124,31 +135,6 @@ export default function Page() {
     setEditValue("");
   }
 
-  function addEvent(dayId: number, team: "first" | "second") {
-    const title = prompt("Название события");
-    if (!title) return;
-
-    const time = prompt("Время");
-    if (!time) return;
-
-    setDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              boards: {
-                ...day.boards,
-                [team]: [
-                  ...day.boards[team],
-                  { id: Date.now(), title, time },
-                ],
-              },
-            }
-          : day
-      )
-    );
-  }
-
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
     const teamName = team === "first" ? day.firstTeamName : day.secondTeamName;
@@ -158,13 +144,12 @@ export default function Page() {
         style={{
           flex: 1,
           minHeight: 700,
-          background: "#fff",
+          background: "#ffe4e6", // тест розовый
           borderRadius: 24,
           padding: 28,
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-
-          ...textBase,
+          color: "#000",
         }}
       >
         <div
@@ -187,24 +172,39 @@ export default function Page() {
             <div
               key={event.id}
               style={{
-                background: "#ffe4e6", // 💗 TEST COLOR (РОЗОВЫЙ)
+                background: "#fff",
                 borderRadius: 20,
                 padding: 28,
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 8px 25px rgba(0,0,0,0.05)",
-
-                ...textBase,
               }}
             >
-              <div style={{ ...textBase, fontSize: 32, fontWeight: 800 }}>
-                {event.time}
-              </div>
+              {/* TIME */}
+              {editing?.eventId === event.id && editing.type === "time" ? (
+                <input
+                  autoFocus
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={saveEdit}
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                  style={inputStyle}
+                />
+              ) : (
+                <div
+                  style={{ fontSize: 32, fontWeight: 800, cursor: "pointer" }}
+                  onClick={() =>
+                    startEditing(1, "time", event.time, event.id)
+                  }
+                >
+                  {event.time}
+                </div>
+              )}
 
-              <div style={{ ...textBase, fontSize: 16, fontWeight: 600, marginTop: 8 }}>
+              {/* PLACE */}
+              <div style={{ fontSize: 16, fontWeight: 600, marginTop: 8 }}>
                 {event.place}
               </div>
 
-              <div style={{ ...textBase, fontSize: 20, fontWeight: 700, marginTop: 10 }}>
+              {/* TITLE */}
+              <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10 }}>
                 {event.title}
               </div>
             </div>
@@ -215,23 +215,13 @@ export default function Page() {
   }
 
   return (
-    <div
-      style={{
-        padding: 24,
-        background: "#f8fafc",
-        minHeight: "100vh",
-
-        ...textBase,
-      }}
-    >
+    <div style={{ padding: 24, background: "#f8fafc", minHeight: "100vh" }}>
       <h1 style={{ fontSize: 32, fontWeight: 800 }}>🎭 Dance Ops</h1>
 
       <div style={{ display: "flex", gap: 28 }}>
         {days.map((day) => (
           <div key={day.id} style={{ width: "100%" }}>
-            <h2 style={{ fontSize: 30, fontWeight: 800 }}>
-              {day.date}
-            </h2>
+            <h2 style={{ fontSize: 30, fontWeight: 800 }}>{day.date}</h2>
 
             <div style={{ display: "flex", gap: 24 }}>
               {renderColumn(day, "first")}
