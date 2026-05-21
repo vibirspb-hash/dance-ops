@@ -164,7 +164,6 @@ export default function Page() {
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
 
-          // 🔥 GLOBAL FIX (важно)
           ...textBase,
         }}
       >
@@ -188,27 +187,23 @@ export default function Page() {
             <div
               key={event.id}
               style={{
-                background: "#fff",
+                background: "#ffe4e6", // 💗 TEST COLOR (РОЗОВЫЙ)
                 borderRadius: 20,
                 padding: 28,
                 border: "1px solid #e5e7eb",
                 boxShadow: "0 8px 25px rgba(0,0,0,0.05)",
 
-                // 🔥 critical: unify rendering
                 ...textBase,
               }}
             >
-              {/* TIME */}
               <div style={{ ...textBase, fontSize: 32, fontWeight: 800 }}>
                 {event.time}
               </div>
 
-              {/* PLACE */}
               <div style={{ ...textBase, fontSize: 16, fontWeight: 600, marginTop: 8 }}>
                 {event.place}
               </div>
 
-              {/* TITLE */}
               <div style={{ ...textBase, fontSize: 20, fontWeight: 700, marginTop: 10 }}>
                 {event.title}
               </div>
@@ -226,7 +221,6 @@ export default function Page() {
         background: "#f8fafc",
         minHeight: "100vh",
 
-        // 🔥 GLOBAL FIX ROOT
         ...textBase,
       }}
     >
