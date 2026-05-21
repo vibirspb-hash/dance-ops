@@ -37,15 +37,8 @@ export default function Page() {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setDays(JSON.parse(saved));
-      } catch {
-        setInitialData();
-      }
-    } else {
-      setInitialData();
-    }
+    if (saved) setDays(JSON.parse(saved));
+    else setInitialData();
   }, []);
 
   useEffect(() => {
@@ -96,27 +89,19 @@ export default function Page() {
       prev.map((day) => {
         if (day.id !== editing.dayId) return day;
 
-        if (editing.type === "date") {
-          return { ...day, date: editValue.trim() || day.date };
-        }
-
-        if (editing.type === "team1") {
-          return { ...day, firstTeamName: editValue.trim() || day.firstTeamName };
-        }
-
-        if (editing.type === "team2") {
-          return { ...day, secondTeamName: editValue.trim() || day.secondTeamName };
-        }
+        if (editing.type === "date") return { ...day, date: editValue || day.date };
+        if (editing.type === "team1") return { ...day, firstTeamName: editValue || day.firstTeamName };
+        if (editing.type === "team2") return { ...day, secondTeamName: editValue || day.secondTeamName };
 
         return {
           ...day,
           boards: {
             ...day.boards,
             first: day.boards.first.map((e) =>
-              e.id === editing.eventId ? { ...e, [editing.type]: editValue.trim() || undefined } : e
+              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
             ),
             second: day.boards.second.map((e) =>
-              e.id === editing.eventId ? { ...e, [editing.type]: editValue.trim() || undefined } : e
+              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
             ),
           },
         };
@@ -134,8 +119,6 @@ export default function Page() {
     const time = prompt("Время");
     if (!time) return;
 
-    const place = prompt("Место") || undefined;
-
     setDays((prev) =>
       prev.map((day) =>
         day.id === dayId
@@ -145,7 +128,7 @@ export default function Page() {
                 ...day.boards,
                 [team]: [
                   ...day.boards[team],
-                  { id: Date.now(), title, time, place },
+                  { id: Date.now(), title, time },
                 ],
               },
             }
@@ -154,170 +137,70 @@ export default function Page() {
     );
   }
 
-  function deleteEvent(dayId: number, team: "first" | "second", eventId: number) {
-    setDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              boards: {
-                ...day.boards,
-                [team]: day.boards[team].filter((e) => e.id !== eventId),
-              },
-            }
-          : day
-      )
-    );
-  }
-
-  function onDrop(dayId: number, team: "first" | "second") {
-    if (!dragged) return;
-
-    setDays((prev) =>
-      prev.map((day) => {
-        if (day.id !== dayId) return day;
-
-        const first = day.boards.first.filter((e) => e.id !== dragged.event.id);
-        const second = day.boards.second.filter((e) => e.id !== dragged.event.id);
-
-        return {
-          ...day,
-          boards: {
-            first: team === "first" ? [...first, dragged.event] : first,
-            second: team === "second" ? [...second, dragged.event] : second,
-          },
-        };
-      })
-    );
-
-    setDragged(null);
-  }
-
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
     const teamName = team === "first" ? day.firstTeamName : day.secondTeamName;
-    const teamType = team === "first" ? "team1" : "team2";
 
     return (
       <div
         onDragOver={(e) => e.preventDefault()}
-        onDrop={() => onDrop(day.id, team)}
+        onDrop={() => {}}
         style={{
           flex: 1,
           minHeight: 700,
-          background: "#ffffff",
+          background: "#fff",
           borderRadius: 24,
           padding: 28,
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+
+          // 🔥 КЛЮЧЕВОЙ FIX ДЛЯ MAC
           color: "#000",
-          WebkitFontSmoothing: "auto",
-          textRendering: "geometricPrecision",
+          WebkitFontSmoothing: "antialiased",
+          textRendering: "optimizeLegibility",
         }}
       >
         <div
-          onClick={() => startEditing(day.id, teamType, teamName)}
           style={{
             display: "inline-block",
-            background: "#1e2937",
+            background: "#111827",
             color: "#fff",
-            borderRadius: 16,
             padding: "14px 28px",
+            borderRadius: 16,
             fontWeight: 700,
-            fontSize: 23,
-            marginBottom: 36,
-            cursor: "pointer",
+            fontSize: 22,
+            marginBottom: 30,
           }}
         >
-          {editing?.dayId === day.id && editing.type === teamType ? (
-            <input
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={saveEdit}
-              onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-              autoFocus
-              style={{
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                color: "#fff",
-                fontSize: 23,
-                fontWeight: 700,
-              }}
-            />
-          ) : (
-            teamName
-          )}
+          {teamName}
         </div>
 
-        <button
-          onClick={() => addEvent(day.id, team)}
-          style={{
-            float: "right",
-            border: "none",
-            background: "#4f46e5",
-            color: "white",
-            borderRadius: 12,
-            padding: "12px 20px",
-            cursor: "pointer",
-            fontSize: 18,
-            fontWeight: 600,
-          }}
-        >
-          +
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          {items.map((event) => (
+            <div
+              key={event.id}
+              style={{
+                background: "#fff",
+                borderRadius: 20,
+                padding: 28,
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 8px 25px rgba(0,0,0,0.05)",
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 36, clear: "both" }}>
-          {items.map((event, index) => (
-            <div key={event.id}>
-              <div
-                draggable
-                onDragStart={() => setDragged({ event, dayId: day.id })}
-                style={{
-                  background: "#fff",
-                  borderRadius: 20,
-                  padding: 28,
-                  cursor: "grab",
-                  border: "2px solid #e0e7ff",
-                  boxShadow: "0 8px 25px rgba(0,0,0,0.06)",
-                  color: "#000",
-                }}
-              >
-                <button
-                  onClick={() => deleteEvent(day.id, team, event.id)}
-                  style={{
-                    position: "absolute",
-                    top: 18,
-                    right: 18,
-                    border: "none",
-                    background: "#fee2e2",
-                    color: "#ef4444",
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    cursor: "pointer",
-                  }}
-                >
-                  🗑
-                </button>
-
-                <div style={{ fontSize: 34, fontWeight: 800, color: "#000", marginBottom: 12 }}>
-                  {event.time}
-                </div>
-
-                <div style={{ fontSize: 17.5, fontWeight: 700, color: "#000", marginBottom: 14 }}>
-                  {event.place || "+ место"}
-                </div>
-
-                <div style={{ fontSize: 21.5, fontWeight: 700, color: "#000" }}>
-                  {event.title}
-                </div>
+                // 🔥 единый текстовый слой
+                color: "inherit",
+              }}
+            >
+              <div style={{ fontSize: 32, fontWeight: 800, color: "inherit" }}>
+                {event.time}
               </div>
 
-              {index !== items.length - 1 && (
-                <div style={{ marginTop: 20, textAlign: "center", color: "#000" }}>
-                  {event.road ? event.road : "+ время в пути"}
-                </div>
-              )}
+              <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>
+                {event.place}
+              </div>
+
+              <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10 }}>
+                {event.title}
+              </div>
             </div>
           ))}
         </div>
@@ -328,35 +211,30 @@ export default function Page() {
   return (
     <div
       style={{
-        padding: "24px 16px",
+        padding: 24,
         background: "#f8fafc",
         minHeight: "100vh",
-        fontFamily: "system-ui",
+
+        // 🔥 global fix
         color: "#000",
-        WebkitFontSmoothing: "auto",
-        textRendering: "geometricPrecision",
+        WebkitFontSmoothing: "antialiased",
+        textRendering: "optimizeLegibility",
       }}
     >
-      <h1 style={{ fontSize: 32, fontWeight: 800, color: "#000" }}>
-        🎭 Dance Ops
-      </h1>
+      <h1 style={{ fontSize: 32, fontWeight: 800 }}>🎭 Dance Ops</h1>
 
-      <button onClick={() => {}} style={{ marginBottom: 20 }}>
-        + Добавить дату
-      </button>
+      <div style={{ display: "flex", gap: 28 }}>
+        {days.map((day) => (
+          <div key={day.id} style={{ width: "100%" }}>
+            <h2 style={{ fontSize: 30, fontWeight: 800 }}>{day.date}</h2>
 
-      {days.map((day) => (
-        <div key={day.id}>
-          <h2 style={{ fontSize: 34, fontWeight: 800, color: "#000" }}>
-            {day.date}
-          </h2>
-
-          <div style={{ display: "flex", gap: 28 }}>
-            {renderColumn(day, "first")}
-            {renderColumn(day, "second")}
+            <div style={{ display: "flex", gap: 24 }}>
+              {renderColumn(day, "first")}
+              {renderColumn(day, "second")}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
