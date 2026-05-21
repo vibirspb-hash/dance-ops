@@ -23,7 +23,10 @@ type DayType = {
 
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
-  const [dragged, setDragged] = useState<{ event: EventType; dayId: number } | null>(null);
+  const [dragged, setDragged] = useState<{
+    event: EventType;
+    dayId: number;
+  } | null>(null);
 
   const [editing, setEditing] = useState<{
     dayId: number;
@@ -37,8 +40,16 @@ export default function Page() {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setDays(JSON.parse(saved));
-    else setInitialData();
+
+    if (saved) {
+      try {
+        setDays(JSON.parse(saved));
+      } catch {
+        setInitialData();
+      }
+    } else {
+      setInitialData();
+    }
   }, []);
 
   useEffect(() => {
@@ -77,7 +88,12 @@ export default function Page() {
     ]);
   }
 
-  function startEditing(dayId: number, type: any, currentValue: string, eventId?: number) {
+  function startEditing(
+    dayId: number,
+    type: any,
+    currentValue: string,
+    eventId?: number
+  ) {
     setEditing({ dayId, type, eventId });
     setEditValue(currentValue);
   }
@@ -89,19 +105,46 @@ export default function Page() {
       prev.map((day) => {
         if (day.id !== editing.dayId) return day;
 
-        if (editing.type === "date") return { ...day, date: editValue || day.date };
-        if (editing.type === "team1") return { ...day, firstTeamName: editValue || day.firstTeamName };
-        if (editing.type === "team2") return { ...day, secondTeamName: editValue || day.secondTeamName };
+        if (editing.type === "date") {
+          return {
+            ...day,
+            date: editValue.trim() || day.date,
+          };
+        }
+
+        if (editing.type === "team1") {
+          return {
+            ...day,
+            firstTeamName: editValue.trim() || day.firstTeamName,
+          };
+        }
+
+        if (editing.type === "team2") {
+          return {
+            ...day,
+            secondTeamName: editValue.trim() || day.secondTeamName,
+          };
+        }
 
         return {
           ...day,
           boards: {
             ...day.boards,
             first: day.boards.first.map((e) =>
-              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
+              e.id === editing.eventId
+                ? {
+                    ...e,
+                    [editing.type]: editValue.trim() || undefined,
+                  }
+                : e
             ),
             second: day.boards.second.map((e) =>
-              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
+              e.id === editing.eventId
+                ? {
+                    ...e,
+                    [editing.type]: editValue.trim() || undefined,
+                  }
+                : e
             ),
           },
         };
@@ -112,12 +155,43 @@ export default function Page() {
     setEditValue("");
   }
 
+  function addDay() {
+    const date = prompt("Введите дату");
+
+    if (!date) return;
+
+    setDays((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        date,
+        firstTeamName: "Я Воробушки",
+        secondTeamName: "Лев и новенькие",
+        boards: {
+          first: [],
+          second: [],
+        },
+      },
+    ]);
+  }
+
   function addEvent(dayId: number, team: "first" | "second") {
     const title = prompt("Название события");
+
     if (!title) return;
 
     const time = prompt("Время");
+
     if (!time) return;
+
+    const place = prompt("Место") || undefined;
+
+    const newEvent: EventType = {
+      id: Date.now(),
+      title,
+      time,
+      place,
+    };
 
     setDays((prev) =>
       prev.map((day) =>
@@ -126,10 +200,7 @@ export default function Page() {
               ...day,
               boards: {
                 ...day.boards,
-                [team]: [
-                  ...day.boards[team],
-                  { id: Date.now(), title, time },
-                ],
+                [team]: [...day.boards[team], newEvent],
               },
             }
           : day
@@ -137,70 +208,391 @@ export default function Page() {
     );
   }
 
+  function deleteEvent(
+    dayId: number,
+    team: "first" | "second",
+    eventId: number
+  ) {
+    setDays((prev) =>
+      prev.map((day) =>
+        day.id === dayId
+          ? {
+              ...day,
+              boards: {
+                ...day.boards,
+                [team]: day.boards[team].filter((e) => e.id !== eventId),
+              },
+            }
+          : day
+      )
+    );
+  }
+
+  function onDrop(dayId: number, team: "first" | "second") {
+    if (!dragged) return;
+
+    setDays((prev) =>
+      prev.map((day) => {
+        if (day.id !== dayId) return day;
+
+        const first = day.boards.first.filter(
+          (e) => e.id !== dragged.event.id
+        );
+
+        const second = day.boards.second.filter(
+          (e) => e.id !== dragged.event.id
+        );
+
+        return {
+          ...day,
+          boards: {
+            first: team === "first" ? [...first, dragged.event] : first,
+            second: team === "second" ? [...second, dragged.event] : second,
+          },
+        };
+      })
+    );
+
+    setDragged(null);
+  }
+
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
-    const teamName = team === "first" ? day.firstTeamName : day.secondTeamName;
+
+    const teamName =
+      team === "first" ? day.firstTeamName : day.secondTeamName;
+
+    const teamType = team === "first" ? "team1" : "team2";
 
     return (
       <div
         onDragOver={(e) => e.preventDefault()}
-        onDrop={() => {}}
+        onDrop={() => onDrop(day.id, team)}
         style={{
           flex: 1,
           minHeight: 700,
-          background: "#fff",
+          background: "#ffffff",
           borderRadius: 24,
           padding: 28,
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-
-          // 🔥 КЛЮЧЕВОЙ FIX ДЛЯ MAC
-          color: "#000",
-          WebkitFontSmoothing: "antialiased",
-          textRendering: "optimizeLegibility",
         }}
       >
         <div
+          onClick={() => startEditing(day.id, teamType, teamName)}
           style={{
             display: "inline-block",
-            background: "#111827",
-            color: "#fff",
-            padding: "14px 28px",
+            background: "#1e2937",
+            color: "white",
             borderRadius: 16,
+            padding: "14px 28px",
             fontWeight: 700,
-            fontSize: 22,
-            marginBottom: 30,
+            fontSize: 23,
+            marginBottom: 36,
+            cursor: "pointer",
+            letterSpacing: "-0.02em",
           }}
         >
-          {teamName}
+          {editing?.dayId === day.id && editing.type === teamType ? (
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+              autoFocus
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: "white",
+                fontSize: 23,
+                fontWeight: 700,
+              }}
+            />
+          ) : (
+            teamName
+          )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          {items.map((event) => (
-            <div
-              key={event.id}
-              style={{
-                background: "#fff",
-                borderRadius: 20,
-                padding: 28,
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 8px 25px rgba(0,0,0,0.05)",
+        <button
+          onClick={() => addEvent(day.id, team)}
+          style={{
+            float: "right",
+            border: "none",
+            background: "#4f46e5",
+            color: "white",
+            borderRadius: 12,
+            padding: "12px 20px",
+            cursor: "pointer",
+            fontSize: 18,
+            fontWeight: 600,
+          }}
+        >
+          +
+        </button>
 
-                // 🔥 единый текстовый слой
-                color: "inherit",
-              }}
-            >
-              <div style={{ fontSize: 32, fontWeight: 800, color: "inherit" }}>
-                {event.time}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 36,
+            clear: "both",
+          }}
+        >
+          {items.map((event, index) => (
+            <div key={event.id}>
+              <div
+                draggable
+                onDragStart={() =>
+                  setDragged({
+                    event,
+                    dayId: day.id,
+                  })
+                }
+                style={{
+                  background: "#ffffff",
+                  borderRadius: 20,
+                  padding: 28,
+                  cursor: "grab",
+                  border: "2px solid #e0e7ff",
+                  boxShadow: "0 8px 25px rgba(79, 70, 229, 0.09)",
+                  position: "relative",
+                }}
+              >
+                <button
+                  onClick={() =>
+                    deleteEvent(day.id, team, event.id)
+                  }
+                  style={{
+                    position: "absolute",
+                    top: 18,
+                    right: 18,
+                    border: "none",
+                    background: "#fee2e2",
+                    color: "#ef4444",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                  }}
+                >
+                  🗑
+                </button>
+
+                {/* Время */}
+                <div
+                  onClick={() =>
+                    startEditing(day.id, "time", event.time, event.id)
+                  }
+                  style={{
+                    fontSize: 34,
+                    fontWeight: 800,
+                    marginBottom: 12,
+                    cursor: "pointer",
+                    color: "#000000",
+                  }}
+                >
+                  {editing?.eventId === event.id &&
+                  editing.type === "time" ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveEdit}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
+                      autoFocus
+                      style={{
+                        fontSize: 34,
+                        fontWeight: 800,
+                        border: "none",
+                        background: "transparent",
+                        outline: "none",
+                        width: "100%",
+                        color: "#000000",
+                      }}
+                    />
+                  ) : (
+                    event.time
+                  )}
+                </div>
+
+                {/* Место */}
+                <div
+                  onClick={() =>
+                    startEditing(
+                      day.id,
+                      "place",
+                      event.place || "",
+                      event.id
+                    )
+                  }
+                  style={{
+                    fontSize: 17.5,
+                    color: "#000000",
+                    marginBottom: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    minHeight: 28,
+                  }}
+                >
+                  {editing?.eventId === event.id &&
+                  editing.type === "place" ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveEdit}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
+                      autoFocus
+                      placeholder="Место проведения"
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        background: "transparent",
+                        outline: "none",
+                        fontSize: 17.5,
+                        color: "#000000",
+                        fontWeight: 700,
+                      }}
+                    />
+                  ) : event.place ? (
+                    `📍 ${event.place}`
+                  ) : (
+                    <span
+                      style={{
+                        color: "#475569",
+                        fontStyle: "italic",
+                        fontWeight: 600,
+                      }}
+                    >
+                      + добавить место
+                    </span>
+                  )}
+                </div>
+
+                {/* Название выступления */}
+                <div
+                  onClick={() =>
+                    startEditing(day.id, "title", event.title, event.id)
+                  }
+                  style={{
+                    fontSize: 21.5,
+                    lineHeight: 1.4,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    color: "#000000",
+                  }}
+                >
+                  {editing?.eventId === event.id &&
+                  editing.type === "title" ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveEdit}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
+                      autoFocus
+                      style={{
+                        fontSize: 21.5,
+                        fontWeight: 700,
+                        border: "none",
+                        background: "transparent",
+                        outline: "none",
+                        width: "100%",
+                        color: "#000000",
+                      }}
+                    />
+                  ) : (
+                    event.title
+                  )}
+                </div>
               </div>
 
-              <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>
-                {event.place}
-              </div>
+              {index !== items.length - 1 && (
+                <div
+                  onClick={() =>
+                    startEditing(
+                      day.id,
+                      "road",
+                      event.road || "",
+                      event.id
+                    )
+                  }
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    marginTop: 28,
+                    cursor: "pointer",
+                  }}
+                >
+                  {editing?.eventId === event.id &&
+                  editing.type === "road" ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveEdit}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
+                      autoFocus
+                      style={{
+                        background: "#fef3c7",
+                        border: "2px solid #f59e0b",
+                        color: "#b45309",
+                        padding: "8px 26px",
+                        borderRadius: 999,
+                        fontWeight: 700,
+                        fontSize: 16,
+                      }}
+                    />
+                  ) : event.road &&
+                    event.road !== "Время в пути" ? (
+                    <div
+                      style={{
+                        background: "#f59e0b",
+                        color: "white",
+                        padding: "8px 26px",
+                        borderRadius: 999,
+                        fontWeight: 700,
+                        fontSize: 16,
+                      }}
+                    >
+                      {event.road}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        background: "#fef3c7",
+                        color: "#d97706",
+                        padding: "8px 26px",
+                        borderRadius: 999,
+                        fontWeight: 600,
+                        fontSize: 15,
+                        border: "2px dashed #fbbf24",
+                      }}
+                    >
+                      + время в пути
+                    </div>
+                  )}
 
-              <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10 }}>
-                {event.title}
-              </div>
+                  <div
+                    style={{
+                      width: 3,
+                      height: 75,
+                      background: "#fcd34d",
+                      margin: "10px 0",
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -211,24 +603,113 @@ export default function Page() {
   return (
     <div
       style={{
-        padding: 24,
+        padding: "24px 16px",
         background: "#f8fafc",
         minHeight: "100vh",
-
-        // 🔥 global fix
-        color: "#000",
-        WebkitFontSmoothing: "antialiased",
-        textRendering: "optimizeLegibility",
+        fontFamily:
+          "system-ui, -apple-system, Arial, sans-serif",
       }}
     >
-      <h1 style={{ fontSize: 32, fontWeight: 800 }}>🎭 Dance Ops</h1>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 40,
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 32,
+            fontWeight: 800,
+            color: "#000000",
+            margin: 0,
+          }}
+        >
+          🎭 Dance Ops
+        </h1>
 
-      <div style={{ display: "flex", gap: 28 }}>
+        <button
+          onClick={addDay}
+          style={{
+            padding: "14px 24px",
+            borderRadius: 16,
+            border: "none",
+            background: "#4f46e5",
+            color: "white",
+            fontWeight: 600,
+            fontSize: 17,
+            cursor: "pointer",
+          }}
+        >
+          + Добавить дату
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 70,
+        }}
+      >
         {days.map((day) => (
-          <div key={day.id} style={{ width: "100%" }}>
-            <h2 style={{ fontSize: 30, fontWeight: 800 }}>{day.date}</h2>
+          <div key={day.id}>
+            <div
+              onClick={() =>
+                startEditing(day.id, "date", day.date)
+              }
+              style={{
+                display: "inline-block",
+                background: "#1e2937",
+                color: "white",
+                borderRadius: 18,
+                padding: "14px 32px",
+                fontWeight: 800,
+                fontSize: 34,
+                marginBottom: 32,
+                cursor: "pointer",
+              }}
+            >
+              {editing?.dayId === day.id &&
+              editing.type === "date" ? (
+                <input
+                  type="text"
+                  value={editValue}
+                  onChange={(e) =>
+                    setEditValue(e.target.value)
+                  }
+                  onBlur={saveEdit}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && saveEdit()
+                  }
+                  autoFocus
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    color: "white",
+                    fontSize: 34,
+                    fontWeight: 800,
+                  }}
+                />
+              ) : (
+                day.date
+              )}
+            </div>
 
-            <div style={{ display: "flex", gap: 24 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection:
+                  window.innerWidth < 900
+                    ? "column"
+                    : "row",
+                gap: 28,
+              }}
+            >
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
