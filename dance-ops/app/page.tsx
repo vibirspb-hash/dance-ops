@@ -21,14 +21,6 @@ type DayType = {
   };
 };
 
-const textBase: React.CSSProperties = {
-  color: "#000",
-  fontFamily: "system-ui, -apple-system, Helvetica, Arial",
-  WebkitFontSmoothing: "antialiased",
-  MozOsxFontSmoothing: "grayscale",
-  textRendering: "optimizeLegibility",
-};
-
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
   const [dragged, setDragged] = useState<{ event: EventType; dayId: number } | null>(null);
@@ -106,14 +98,10 @@ export default function Page() {
           boards: {
             ...day.boards,
             first: day.boards.first.map((e) =>
-              e.id === editing.eventId
-                ? { ...e, [editing.type]: editValue || "" }
-                : e
+              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
             ),
             second: day.boards.second.map((e) =>
-              e.id === editing.eventId
-                ? { ...e, [editing.type]: editValue || "" }
-                : e
+              e.id === editing.eventId ? { ...e, [editing.type]: editValue || "" } : e
             ),
           },
         };
@@ -155,6 +143,8 @@ export default function Page() {
 
     return (
       <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={() => {}}
         style={{
           flex: 1,
           minHeight: 700,
@@ -164,8 +154,10 @@ export default function Page() {
           border: "1px solid #e5e5e5",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
 
-          // 🔥 GLOBAL FIX (важно)
-          ...textBase,
+          // 🔥 КЛЮЧЕВОЙ FIX ДЛЯ MAC
+          color: "#000",
+          WebkitFontSmoothing: "antialiased",
+          textRendering: "optimizeLegibility",
         }}
       >
         <div
@@ -194,22 +186,19 @@ export default function Page() {
                 border: "1px solid #e5e7eb",
                 boxShadow: "0 8px 25px rgba(0,0,0,0.05)",
 
-                // 🔥 critical: unify rendering
-                ...textBase,
+                // 🔥 единый текстовый слой
+                color: "inherit",
               }}
             >
-              {/* TIME */}
-              <div style={{ ...textBase, fontSize: 32, fontWeight: 800 }}>
+              <div style={{ fontSize: 32, fontWeight: 800, color: "inherit" }}>
                 {event.time}
               </div>
 
-              {/* PLACE */}
-              <div style={{ ...textBase, fontSize: 16, fontWeight: 600, marginTop: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>
                 {event.place}
               </div>
 
-              {/* TITLE */}
-              <div style={{ ...textBase, fontSize: 20, fontWeight: 700, marginTop: 10 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10 }}>
                 {event.title}
               </div>
             </div>
@@ -226,8 +215,10 @@ export default function Page() {
         background: "#f8fafc",
         minHeight: "100vh",
 
-        // 🔥 GLOBAL FIX ROOT
-        ...textBase,
+        // 🔥 global fix
+        color: "#000",
+        WebkitFontSmoothing: "antialiased",
+        textRendering: "optimizeLegibility",
       }}
     >
       <h1 style={{ fontSize: 32, fontWeight: 800 }}>🎭 Dance Ops</h1>
@@ -235,9 +226,7 @@ export default function Page() {
       <div style={{ display: "flex", gap: 28 }}>
         {days.map((day) => (
           <div key={day.id} style={{ width: "100%" }}>
-            <h2 style={{ fontSize: 30, fontWeight: 800 }}>
-              {day.date}
-            </h2>
+            <h2 style={{ fontSize: 30, fontWeight: 800 }}>{day.date}</h2>
 
             <div style={{ display: "flex", gap: 24 }}>
               {renderColumn(day, "first")}
