@@ -23,7 +23,10 @@ type DayType = {
 
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
-  const [dragged, setDragged] = useState<{ event: EventType; dayId: number } | null>(null);
+  const [dragged, setDragged] = useState<{
+    event: EventType;
+    dayId: number;
+  } | null>(null);
 
   const [editing, setEditing] = useState<{
     dayId: number;
@@ -85,7 +88,12 @@ export default function Page() {
     ]);
   }
 
-  function startEditing(dayId: number, type: any, currentValue: string, eventId?: number) {
+  function startEditing(
+    dayId: number,
+    type: any,
+    currentValue: string,
+    eventId?: number
+  ) {
     setEditing({ dayId, type, eventId });
     setEditValue(currentValue);
   }
@@ -200,7 +208,11 @@ export default function Page() {
     );
   }
 
-  function deleteEvent(dayId: number, team: "first" | "second", eventId: number) {
+  function deleteEvent(
+    dayId: number,
+    team: "first" | "second",
+    eventId: number
+  ) {
     setDays((prev) =>
       prev.map((day) =>
         day.id === dayId
@@ -223,9 +235,13 @@ export default function Page() {
       prev.map((day) => {
         if (day.id !== dayId) return day;
 
-        const first = day.boards.first.filter((e) => e.id !== dragged.event.id);
+        const first = day.boards.first.filter(
+          (e) => e.id !== dragged.event.id
+        );
 
-        const second = day.boards.second.filter((e) => e.id !== dragged.event.id);
+        const second = day.boards.second.filter(
+          (e) => e.id !== dragged.event.id
+        );
 
         return {
           ...day,
@@ -243,7 +259,8 @@ export default function Page() {
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
 
-    const teamName = team === "first" ? day.firstTeamName : day.secondTeamName;
+    const teamName =
+      team === "first" ? day.firstTeamName : day.secondTeamName;
 
     const teamType = team === "first" ? "team1" : "team2";
 
@@ -261,7 +278,6 @@ export default function Page() {
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
         }}
       >
-        {/* Название состава */}
         <div
           onClick={() => startEditing(day.id, teamType, teamName)}
           style={{
@@ -328,7 +344,12 @@ export default function Page() {
             <div key={event.id}>
               <div
                 draggable
-                onDragStart={() => setDragged({ event, dayId: day.id })}
+                onDragStart={() =>
+                  setDragged({
+                    event,
+                    dayId: day.id,
+                  })
+                }
                 style={{
                   background: "#ffffff",
                   borderRadius: 20,
@@ -340,7 +361,9 @@ export default function Page() {
                 }}
               >
                 <button
-                  onClick={() => deleteEvent(day.id, team, event.id)}
+                  onClick={() =>
+                    deleteEvent(day.id, team, event.id)
+                  }
                   style={{
                     position: "absolute",
                     top: 18,
@@ -358,22 +381,27 @@ export default function Page() {
 
                 {/* Время */}
                 <div
-                  onClick={() => startEditing(day.id, "time", event.time, event.id)}
+                  onClick={() =>
+                    startEditing(day.id, "time", event.time, event.id)
+                  }
                   style={{
                     fontSize: 34,
                     fontWeight: 800,
                     marginBottom: 12,
                     cursor: "pointer",
-                    color: "#000",
+                    color: "#000000",
                   }}
                 >
-                  {editing?.eventId === event.id && editing.type === "time" ? (
+                  {editing?.eventId === event.id &&
+                  editing.type === "time" ? (
                     <input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={saveEdit}
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
                       autoFocus
                       style={{
                         fontSize: 34,
@@ -382,6 +410,7 @@ export default function Page() {
                         background: "transparent",
                         outline: "none",
                         width: "100%",
+                        color: "#000000",
                       }}
                     />
                   ) : (
@@ -391,23 +420,33 @@ export default function Page() {
 
                 {/* Место */}
                 <div
-                  onClick={() => startEditing(day.id, "place", event.place || "", event.id)}
+                  onClick={() =>
+                    startEditing(
+                      day.id,
+                      "place",
+                      event.place || "",
+                      event.id
+                    )
+                  }
                   style={{
                     fontSize: 17.5,
-                    color: "#111827",
+                    color: "#000000",
                     marginBottom: 14,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: "pointer",
                     minHeight: 28,
                   }}
                 >
-                  {editing?.eventId === event.id && editing.type === "place" ? (
+                  {editing?.eventId === event.id &&
+                  editing.type === "place" ? (
                     <input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={saveEdit}
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
                       autoFocus
                       placeholder="Место проведения"
                       style={{
@@ -416,6 +455,8 @@ export default function Page() {
                         background: "transparent",
                         outline: "none",
                         fontSize: 17.5,
+                        color: "#000000",
+                        fontWeight: 700,
                       }}
                     />
                   ) : event.place ? (
@@ -423,8 +464,9 @@ export default function Page() {
                   ) : (
                     <span
                       style={{
-                        color: "#94a3b8",
+                        color: "#475569",
                         fontStyle: "italic",
+                        fontWeight: 600,
                       }}
                     >
                       + добавить место
@@ -434,30 +476,36 @@ export default function Page() {
 
                 {/* Название выступления */}
                 <div
-                  onClick={() => startEditing(day.id, "title", event.title, event.id)}
+                  onClick={() =>
+                    startEditing(day.id, "title", event.title, event.id)
+                  }
                   style={{
                     fontSize: 21.5,
                     lineHeight: 1.4,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: "pointer",
-                    color: "#000",
+                    color: "#000000",
                   }}
                 >
-                  {editing?.eventId === event.id && editing.type === "title" ? (
+                  {editing?.eventId === event.id &&
+                  editing.type === "title" ? (
                     <input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={saveEdit}
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
                       autoFocus
                       style={{
                         fontSize: 21.5,
-                        fontWeight: 600,
+                        fontWeight: 700,
                         border: "none",
                         background: "transparent",
                         outline: "none",
                         width: "100%",
+                        color: "#000000",
                       }}
                     />
                   ) : (
@@ -466,10 +514,16 @@ export default function Page() {
                 </div>
               </div>
 
-              {/* Road */}
               {index !== items.length - 1 && (
                 <div
-                  onClick={() => startEditing(day.id, "road", event.road || "", event.id)}
+                  onClick={() =>
+                    startEditing(
+                      day.id,
+                      "road",
+                      event.road || "",
+                      event.id
+                    )
+                  }
                   style={{
                     display: "flex",
                     flexDirection: "column",
@@ -478,13 +532,16 @@ export default function Page() {
                     cursor: "pointer",
                   }}
                 >
-                  {editing?.eventId === event.id && editing.type === "road" ? (
+                  {editing?.eventId === event.id &&
+                  editing.type === "road" ? (
                     <input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={saveEdit}
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit()
+                      }
                       autoFocus
                       style={{
                         background: "#fef3c7",
@@ -496,7 +553,8 @@ export default function Page() {
                         fontSize: 16,
                       }}
                     />
-                  ) : event.road && event.road !== "Время в пути" ? (
+                  ) : event.road &&
+                    event.road !== "Время в пути" ? (
                     <div
                       style={{
                         background: "#f59e0b",
@@ -548,7 +606,8 @@ export default function Page() {
         padding: "24px 16px",
         background: "#f8fafc",
         minHeight: "100vh",
-        fontFamily: "system-ui, -apple-system, Arial, sans-serif",
+        fontFamily:
+          "system-ui, -apple-system, Arial, sans-serif",
       }}
     >
       <div
@@ -565,7 +624,7 @@ export default function Page() {
           style={{
             fontSize: 32,
             fontWeight: 800,
-            color: "#1e2937",
+            color: "#000000",
             margin: 0,
           }}
         >
@@ -599,7 +658,9 @@ export default function Page() {
         {days.map((day) => (
           <div key={day.id}>
             <div
-              onClick={() => startEditing(day.id, "date", day.date)}
+              onClick={() =>
+                startEditing(day.id, "date", day.date)
+              }
               style={{
                 display: "inline-block",
                 background: "#1e2937",
@@ -612,13 +673,18 @@ export default function Page() {
                 cursor: "pointer",
               }}
             >
-              {editing?.dayId === day.id && editing.type === "date" ? (
+              {editing?.dayId === day.id &&
+              editing.type === "date" ? (
                 <input
                   type="text"
                   value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
+                  onChange={(e) =>
+                    setEditValue(e.target.value)
+                  }
                   onBlur={saveEdit}
-                  onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && saveEdit()
+                  }
                   autoFocus
                   style={{
                     background: "transparent",
@@ -637,7 +703,10 @@ export default function Page() {
             <div
               style={{
                 display: "flex",
-                flexDirection: window.innerWidth < 900 ? "column" : "row",
+                flexDirection:
+                  window.innerWidth < 900
+                    ? "column"
+                    : "row",
                 gap: 28,
               }}
             >
