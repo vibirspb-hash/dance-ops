@@ -26,34 +26,33 @@ type DayType = {
 
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const [dragged, setDragged] = useState<{
     event: EventType;
     dayId: number;
   } | null>(null);
 
-  const [editing, setEditing] = useState<any>(null);
-  const [editValue, setEditValue] = useState("");
-
   useEffect(() => {
-    setMounted(true);
-
-    const check = () => setIsMobile(window.innerWidth < 900);
-    check();
-
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    setIsClient(true);
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (mounted) loadData();
-  }, [mounted]);
-
   async function loadData() {
-    const { data: daysData } = await supabase.from("days").select("*");
-    const { data: eventsData } = await supabase.from("events").select("*");
+    const { data: daysData, error: daysError } = await supabase
+      .from("days")
+      .select("*")
+      .order("id");
+
+    const { data: eventsData, error: eventsError } = await supabase
+      .from("events")
+      .select("*")
+      .order("id");
+
+    if (daysError || eventsError) {
+      console.error(daysError || eventsError);
+      return;
+    }
 
     const formatted: DayType[] = (daysData || []).map((day: any) => ({
       id: day.id,
@@ -83,7 +82,10 @@ export default function Page() {
 
     await supabase
       .from("events")
-      .update({ day_id: dayId, team })
+      .update({
+        day_id: dayId,
+        team,
+      })
       .eq("id", dragged.event.id);
 
     setDragged(null);
@@ -99,18 +101,18 @@ export default function Page() {
         onDrop={() => onDrop(day.id, team)}
         style={{
           flex: 1,
-          minHeight: 700,
+          minHeight: 600,
           background: "#fff",
-          borderRadius: 24,
-          padding: 28,
+          borderRadius: 20,
+          padding: 20,
           border: "1px solid #e5e5e5",
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 20 }}>
+        <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 16 }}>
           {team === "first" ? day.firstTeamName : day.secondTeamName}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {items.map((event) => (
             <div
               key={event.id}
@@ -120,14 +122,14 @@ export default function Page() {
               }
               style={{
                 background: "#fff",
-                borderRadius: 20,
-                padding: 20,
-                border: "1px solid #e5e7eb",
+                borderRadius: 16,
+                padding: 16,
+                border: "1px solid #ddd",
               }}
             >
               <button onClick={() => deleteEvent(event.id)}>🗑</button>
 
-              <div style={{ fontSize: 28, fontWeight: 800 }}>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>
                 {event.time}
               </div>
 
@@ -140,24 +142,30 @@ export default function Page() {
     );
   }
 
-  if (!mounted) return null;
+  if (!isClient) return null;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 20 }}>
       <h1>🎭 Dance Ops</h1>
 
       <div
         style={{
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: "column",
           gap: 24,
         }}
       >
         {days.map((day) => (
-          <div key={day.id} style={{ width: "100%" }}>
+          <div key={day.id}>
             <h2>{day.date}</h2>
 
-            <div style={{ display: "flex", gap: 24 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: window.innerWidth < 900 ? "column" : "row",
+                gap: 20,
+              }}
+            >
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
