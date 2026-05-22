@@ -27,21 +27,17 @@ type DayType = {
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
   const [isClient, setIsClient] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const [dragged, setDragged] = useState<{
     event: EventType;
     dayId: number;
   } | null>(null);
 
+  const [editing, setEditing] = useState<any>(null);
+  const [editValue, setEditValue] = useState("");
+
   useEffect(() => {
     setIsClient(true);
-
-    const check = () => setIsMobile(window.innerWidth < 900);
-    check();
-
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => {
@@ -52,13 +48,11 @@ export default function Page() {
   async function loadData() {
     const { data: daysData, error: daysError } = await supabase
       .from("days")
-      .select("*")
-      .order("id");
+      .select("*");
 
     const { data: eventsData, error: eventsError } = await supabase
       .from("events")
-      .select("*")
-      .order("id");
+      .select("*");
 
     if (daysError || eventsError) {
       console.error(daysError || eventsError);
@@ -93,10 +87,7 @@ export default function Page() {
 
     await supabase
       .from("events")
-      .update({
-        day_id: dayId,
-        team,
-      })
+      .update({ day_id: dayId, team })
       .eq("id", dragged.event.id);
 
     setDragged(null);
@@ -112,35 +103,33 @@ export default function Page() {
         onDrop={() => onDrop(day.id, team)}
         style={{
           flex: 1,
-          minHeight: 600,
+          minHeight: 700,
           background: "#fff",
-          borderRadius: 20,
-          padding: 20,
+          borderRadius: 24,
+          padding: 28,
           border: "1px solid #e5e5e5",
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 16 }}>
+        <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 20 }}>
           {team === "first" ? day.firstTeamName : day.secondTeamName}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {items.map((event) => (
             <div
               key={event.id}
               draggable
-              onDragStart={() =>
-                setDragged({ event, dayId: day.id })
-              }
+              onDragStart={() => setDragged({ event, dayId: day.id })}
               style={{
                 background: "#fff",
-                borderRadius: 16,
-                padding: 16,
-                border: "1px solid #ddd",
+                borderRadius: 20,
+                padding: 20,
+                border: "1px solid #e5e7eb",
               }}
             >
               <button onClick={() => deleteEvent(event.id)}>🗑</button>
 
-              <div style={{ fontSize: 22, fontWeight: 700 }}>
+              <div style={{ fontSize: 28, fontWeight: 800 }}>
                 {event.time}
               </div>
 
@@ -156,21 +145,21 @@ export default function Page() {
   if (!isClient) return null;
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 24 }}>
       <h1>🎭 Dance Ops</h1>
 
       <div
         style={{
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: 20,
+          flexDirection: "row",
+          gap: 24,
         }}
       >
         {days.map((day) => (
           <div key={day.id} style={{ width: "100%" }}>
             <h2>{day.date}</h2>
 
-            <div style={{ display: "flex", gap: 20 }}>
+            <div style={{ display: "flex", gap: 24 }}>
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
