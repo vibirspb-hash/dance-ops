@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 type EventType = {
   id: number;
@@ -27,6 +27,7 @@ type DayType = {
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [dragged, setDragged] = useState<{
     event: EventType;
@@ -35,8 +36,18 @@ export default function Page() {
 
   useEffect(() => {
     setIsClient(true);
-    loadData();
+
+    const check = () => setIsMobile(window.innerWidth < 900);
+    check();
+
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    loadData();
+  }, [isClient]);
 
   async function loadData() {
     const { data: daysData, error: daysError } = await supabase
@@ -151,21 +162,15 @@ export default function Page() {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: 24,
+          flexDirection: isMobile ? "column" : "row",
+          gap: 20,
         }}
       >
         {days.map((day) => (
-          <div key={day.id}>
+          <div key={day.id} style={{ width: "100%" }}>
             <h2>{day.date}</h2>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: window.innerWidth < 900 ? "column" : "row",
-                gap: 20,
-              }}
-            >
+            <div style={{ display: "flex", gap: 20 }}>
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
