@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 
 type EventType = {
   id: number;
@@ -37,7 +37,6 @@ export default function Page() {
   const [editing, setEditing] = useState<any>(null);
   const [editValue, setEditValue] = useState("");
 
-  // ✅ FIX hydration
   useEffect(() => {
     setMounted(true);
 
@@ -116,7 +115,9 @@ export default function Page() {
             <div
               key={event.id}
               draggable
-              onDragStart={() => setDragged({ event, dayId: day.id })}
+              onDragStart={() =>
+                setDragged({ event, dayId: day.id })
+              }
               style={{
                 background: "#fff",
                 borderRadius: 20,
@@ -139,7 +140,6 @@ export default function Page() {
     );
   }
 
-  // ⛔ важно: не рендерим до mount (fix hydration)
   if (!mounted) return null;
 
   return (
