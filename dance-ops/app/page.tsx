@@ -28,13 +28,17 @@ export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
   const [isClient, setIsClient] = useState(false);
 
-  const [newEvent, setNewEvent] = useState({
+  const [dragged, setDragged] = useState<{
+    event: EventType;
+    dayId: number;
+  } | null>(null);
+
+  // ===== EDIT EVENT =====
+  const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
+  const [editForm, setEditForm] = useState({
     title: "",
     time: "",
     place: "",
-    road: "",
-    team: "first",
-    day_id: 1,
   });
 
   useEffect(() => {
@@ -68,7 +72,7 @@ export default function Page() {
     setDays(formatted);
   }
 
-  // ===== DAYS =====
+  // ===== ADD DAY =====
   async function addDay() {
     await supabase.from("days").insert([
       {
@@ -81,33 +85,69 @@ export default function Page() {
     await loadData();
   }
 
-  // ===== EVENTS =====
+  // ===== DELETE DAY =====
+  async function deleteDay(dayId: number) {
+    await supabase.from("events").delete().eq("day_id", dayId);
+    await supabase.from("days").delete().eq("id", dayId);
+    await loadData();
+  }
+
+  // ===== ADD EVENT =====
   async function addEvent(dayId: number, team: "first" | "second") {
     await supabase.from("events").insert([
       {
-        title: newEvent.title || "new event",
-        time: newEvent.time || "00:00",
-        place: newEvent.place,
-        road: newEvent.road,
+        title: "new event",
+        time: "00:00",
         team,
         day_id: dayId,
       },
     ]);
 
-    setNewEvent({
-      title: "",
-      time: "",
-      place: "",
-      road: "",
-      team: "first",
-      day_id: 1,
-    });
-
     await loadData();
   }
 
+  // ===== DELETE EVENT =====
   async function deleteEvent(eventId: number) {
     await supabase.from("events").delete().eq("id", eventId);
+    await loadData();
+  }
+
+  // ===== EDIT EVENT =====
+  function startEdit(event: EventType) {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title || "",
+      time: event.time || "",
+      place: event.place || "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingEvent) return;
+
+    await supabase
+      .from("events")
+      .update({
+        title: editForm.title,
+        time: editForm.time,
+        place: editForm.place,
+      })
+      .eq("id", editingEvent.id);
+
+    setEditingEvent(null);
+    await loadData();
+  }
+
+  // ===== DROP =====
+  async function onDrop(dayId: number, team: "first" | "second") {
+    if (!dragged) return;
+
+    await supabase
+      .from("events")
+      .update({ day_id: dayId, team })
+      .eq("id", dragged.event.id);
+
+    setDragged(null);
     await loadData();
   }
 
@@ -116,6 +156,8 @@ export default function Page() {
 
     return (
       <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={() => onDrop(day.id, team)}
         style={{
           flex: 1,
           minHeight: 500,
@@ -125,7 +167,7 @@ export default function Page() {
           border: "1px solid #e5e5e5",
         }}
       >
-        {/* HEADER COLUMN */}
+        {/* COLUMN HEADER */}
         <div
           style={{
             display: "flex",
@@ -137,26 +179,33 @@ export default function Page() {
             {team === "first" ? day.firstTeamName : day.secondTeamName}
           </div>
 
-          <button
-            onClick={() => addEvent(day.id, team)}
-            style={{ fontSize: 18 }}
-          >
-            ➕
-          </button>
+          <button onClick={() => addEvent(day.id, team)}>➕</button>
         </div>
 
         {/* EVENTS */}
         {items.map((event) => (
           <div
             key={event.id}
+            draggable
+            onDragStart={() => setDragged({ event, dayId: day.id })}
+            onClick={() => startEdit(event)}
             style={{
               padding: 10,
               border: "1px solid #ddd",
               borderRadius: 10,
               marginBottom: 10,
+              cursor: "pointer",
             }}
           >
-            <button onClick={() => deleteEvent(event.id)}>🗑</button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteEvent(event.id);
+              }}
+            >
+              🗑
+            </button>
+
             <div style={{ fontWeight: 700 }}>{event.time}</div>
             <div>{event.title}</div>
           </div>
@@ -171,21 +220,20 @@ export default function Page() {
     <div style={{ padding: 20 }}>
       <h1>🎭 Dance Ops</h1>
 
-      {/* DAYS LIST */}
+      {/* DAYS */}
       {days.map((day) => (
         <div key={day.id} style={{ marginBottom: 40 }}>
           {/* DAY HEADER */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <h2 style={{ margin: 0 }}>{day.date}</h2>
 
-            <button onClick={addDay} style={{ fontSize: 18 }}>
-              ➕
+            <button onClick={addDay}>➕</button>
+
+            <button
+              onClick={() => deleteDay(day.id)}
+              style={{ marginLeft: 10 }}
+            >
+              🗑
             </button>
           </div>
 
@@ -196,6 +244,53 @@ export default function Page() {
           </div>
         </div>
       ))}
+
+      {/* EDIT MODAL */}
+      {editingEvent && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+            <h3>Edit Event</h3>
+
+            <input
+              placeholder="title"
+              value={editForm.title}
+              onChange={(e) =>
+                setEditForm({ ...editForm, title: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="time"
+              value={editForm.time}
+              onChange={(e) =>
+                setEditForm({ ...editForm, time: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="place"
+              value={editForm.place}
+              onChange={(e) =>
+                setEditForm({ ...editForm, place: e.target.value })
+              }
+            />
+
+            <div style={{ marginTop: 10 }}>
+              <button onClick={saveEdit}>Save</button>
+              <button onClick={() => setEditingEvent(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
