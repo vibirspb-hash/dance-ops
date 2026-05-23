@@ -27,6 +27,7 @@ type DayType = {
 export default function Page() {
   const [days, setDays] = useState<DayType[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [dragged, setDragged] = useState<{
     event: EventType;
@@ -34,7 +35,7 @@ export default function Page() {
   } | null>(null);
 
   const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
-  const [editEventForm, setEditEventForm] = useState({
+  const [editForm, setEditForm] = useState({
     title: "",
     time: "",
     place: "",
@@ -43,6 +44,7 @@ export default function Page() {
 
   useEffect(() => {
     setIsClient(true);
+    setIsMobile(window.innerWidth < 768);
   }, []);
 
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function Page() {
     setDays(formatted);
   }
 
-  // ================= EVENTS =================
+  // ================= CRUD =================
 
   async function addEvent(dayId: number, team: "first" | "second") {
     await supabase.from("events").insert([
@@ -88,39 +90,12 @@ export default function Page() {
     await loadData();
   }
 
-  async function deleteEvent(eventId: number) {
-    await supabase.from("events").delete().eq("id", eventId);
+  async function deleteEvent(id: number) {
+    await supabase.from("events").delete().eq("id", id);
     await loadData();
   }
 
-  function startEditEvent(event: EventType) {
-    setEditingEvent(event);
-    setEditEventForm({
-      title: event.title || "",
-      time: event.time || "",
-      place: event.place || "",
-      road: event.road || "",
-    });
-  }
-
-  async function saveEvent() {
-    if (!editingEvent) return;
-
-    await supabase
-      .from("events")
-      .update({
-        title: editEventForm.title,
-        time: editEventForm.time,
-        place: editEventForm.place,
-        road: editEventForm.road,
-      })
-      .eq("id", editingEvent.id);
-
-    setEditingEvent(null);
-    await loadData();
-  }
-
-  async function quickSetRoad(event: EventType) {
+  async function quickRoad(event: EventType) {
     const value = prompt("Road time:");
     if (!value) return;
 
@@ -129,6 +104,28 @@ export default function Page() {
       .update({ road: value })
       .eq("id", event.id);
 
+    await loadData();
+  }
+
+  function startEdit(event: EventType) {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      time: event.time,
+      place: event.place || "",
+      road: event.road || "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingEvent) return;
+
+    await supabase
+      .from("events")
+      .update(editForm)
+      .eq("id", editingEvent.id);
+
+    setEditingEvent(null);
     await loadData();
   }
 
@@ -146,6 +143,35 @@ export default function Page() {
     await loadData();
   }
 
+  // ================= UI =================
+
+  function renderEvent(event: EventType) {
+    return (
+      <div key={event.id} style={eventCard}>
+        <div
+          draggable
+          onDragStart={() => setDragged({ event, dayId: event.day_id! })}
+          onClick={() => startEdit(event)}
+        >
+          <div style={{ fontWeight: 700 }}>{event.time}</div>
+          <div>{event.title}</div>
+          <div style={{ fontSize: 12, color: "#888" }}>{event.place}</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => quickRoad(event)}>🚗</button>
+          <button onClick={() => deleteEvent(event.id)}>🗑</button>
+        </div>
+
+        {event.road && (
+          <div style={{ fontSize: 12, color: "#777", marginTop: 5 }}>
+            → {event.road}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
 
@@ -153,75 +179,15 @@ export default function Page() {
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={() => onDrop(day.id, team)}
-        style={{
-          flex: 1,
-          minHeight: 500,
-          background: "#fff",
-          borderRadius: 16,
-          padding: 16,
-          border: "1px solid #e5e5e5",
-        }}
+        style={columnStyle}
       >
-        {/* HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <b>{team === "first" ? day.firstTeamName : day.secondTeamName}</b>
           <button onClick={() => addEvent(day.id, team)}>➕</button>
         </div>
 
-        {/* EVENTS */}
         <div style={{ marginTop: 10 }}>
-          {items.map((event) => (
-            <div key={event.id} style={{ marginBottom: 10 }}>
-              <div
-                draggable
-                onDragStart={() => setDragged({ event, dayId: day.id })}
-                onClick={() => startEditEvent(event)}
-                style={{
-                  padding: 10,
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{event.time}</div>
-                    <div>{event.title}</div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      quickSetRoad(event);
-                    }}>
-                      🚗
-                    </button>
-
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      deleteEvent(event.id);
-                    }}>
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ROAD */}
-              {event.road && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#777",
-                    marginLeft: 10,
-                    marginTop: 4,
-                  }}
-                >
-                  → {event.road}
-                </div>
-              )}
-            </div>
-          ))}
+          {items.map(renderEvent)}
         </div>
       </div>
     );
@@ -230,59 +196,68 @@ export default function Page() {
   if (!isClient) return null;
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 16 }}>
       <h1>🎭 Dance Ops</h1>
 
       {days.map((day) => (
-        <div key={day.id} style={{ marginBottom: 40 }}>
+        <div key={day.id} style={{ marginBottom: 30 }}>
           <h2>{day.date}</h2>
 
-          <div style={{ display: "flex", gap: 20 }}>
-            {renderColumn(day, "first")}
-            {renderColumn(day, "second")}
-          </div>
+          {/* MOBILE */}
+          {isMobile ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {renderColumn(day, "first")}
+              {renderColumn(day, "second")}
+            </div>
+          ) : (
+            /* DESKTOP */
+            <div style={{ display: "flex", gap: 20 }}>
+              {renderColumn(day, "first")}
+              {renderColumn(day, "second")}
+            </div>
+          )}
         </div>
       ))}
 
       {/* EDIT MODAL */}
       {editingEvent && (
         <div style={modal}>
-          <div style={box}>
+          <div style={modalBox}>
             <h3>Edit event</h3>
 
             <input
-              value={editEventForm.title}
+              value={editForm.title}
               onChange={(e) =>
-                setEditEventForm({ ...editEventForm, title: e.target.value })
+                setEditForm({ ...editForm, title: e.target.value })
               }
               placeholder="title"
             />
 
             <input
-              value={editEventForm.time}
+              value={editForm.time}
               onChange={(e) =>
-                setEditEventForm({ ...editEventForm, time: e.target.value })
+                setEditForm({ ...editForm, time: e.target.value })
               }
               placeholder="time"
             />
 
             <input
-              value={editEventForm.place}
+              value={editForm.place}
               onChange={(e) =>
-                setEditEventForm({ ...editEventForm, place: e.target.value })
+                setEditForm({ ...editForm, place: e.target.value })
               }
               placeholder="place"
             />
 
             <input
-              value={editEventForm.road}
+              value={editForm.road}
               onChange={(e) =>
-                setEditEventForm({ ...editEventForm, road: e.target.value })
+                setEditForm({ ...editForm, road: e.target.value })
               }
               placeholder="road"
             />
 
-            <button onClick={saveEvent}>Save</button>
+            <button onClick={saveEdit}>Save</button>
             <button onClick={() => setEditingEvent(null)}>Close</button>
           </div>
         </div>
@@ -291,18 +266,38 @@ export default function Page() {
   );
 }
 
+// ================= STYLES =================
+
+const columnStyle: React.CSSProperties = {
+  flex: 1,
+  background: "#fff",
+  border: "1px solid #e5e5e5",
+  borderRadius: 14,
+  padding: 12,
+  minHeight: 200,
+};
+
+const eventCard: React.CSSProperties = {
+  padding: 10,
+  border: "1px solid #ddd",
+  borderRadius: 10,
+  marginBottom: 10,
+  display: "flex",
+  justifyContent: "space-between",
+};
+
 const modal: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
-  alignItems: "center",
   justifyContent: "center",
+  alignItems: "center",
 };
 
-const box: React.CSSProperties = {
+const modalBox: React.CSSProperties = {
   background: "#fff",
   padding: 20,
-  borderRadius: 12,
-  minWidth: 300,
+  borderRadius: 10,
+  minWidth: 280,
 };
