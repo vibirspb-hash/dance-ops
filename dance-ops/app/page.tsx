@@ -33,8 +33,21 @@ export default function Page() {
     dayId: number;
   } | null>(null);
 
-  const [editing, setEditing] = useState<any>(null);
-  const [editValue, setEditValue] = useState("");
+  // ===== ADMIN STATES =====
+  const [newDay, setNewDay] = useState({
+    date: "",
+    first_team_name: "",
+    second_team_name: "",
+  });
+
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    time: "",
+    place: "",
+    road: "",
+    team: "first",
+    day_id: 1,
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -46,18 +59,8 @@ export default function Page() {
   }, [isClient]);
 
   async function loadData() {
-    const { data: daysData, error: daysError } = await supabase
-      .from("days")
-      .select("*");
-
-    const { data: eventsData, error: eventsError } = await supabase
-      .from("events")
-      .select("*");
-
-    if (daysError || eventsError) {
-      console.error(daysError || eventsError);
-      return;
-    }
+    const { data: daysData } = await supabase.from("days").select("*");
+    const { data: eventsData } = await supabase.from("events").select("*");
 
     const formatted: DayType[] = (daysData || []).map((day: any) => ({
       id: day.id,
@@ -75,6 +78,55 @@ export default function Page() {
     }));
 
     setDays(formatted);
+  }
+
+  // ===== DAYS =====
+  async function addDay() {
+    await supabase.from("days").insert([
+      {
+        date: newDay.date,
+        first_team_name: newDay.first_team_name,
+        second_team_name: newDay.second_team_name,
+      },
+    ]);
+
+    setNewDay({
+      date: "",
+      first_team_name: "",
+      second_team_name: "",
+    });
+
+    await loadData();
+  }
+
+  async function updateDay(dayId: number, data: any) {
+    await supabase.from("days").update(data).eq("id", dayId);
+    await loadData();
+  }
+
+  // ===== EVENTS =====
+  async function addEvent() {
+    await supabase.from("events").insert([
+      {
+        title: newEvent.title,
+        time: newEvent.time,
+        place: newEvent.place,
+        road: newEvent.road,
+        team: newEvent.team,
+        day_id: newEvent.day_id,
+      },
+    ]);
+
+    setNewEvent({
+      title: "",
+      time: "",
+      place: "",
+      road: "",
+      team: "first",
+      day_id: 1,
+    });
+
+    await loadData();
   }
 
   async function deleteEvent(eventId: number) {
@@ -103,41 +155,34 @@ export default function Page() {
         onDrop={() => onDrop(day.id, team)}
         style={{
           flex: 1,
-          minHeight: 700,
+          minHeight: 500,
           background: "#fff",
-          borderRadius: 24,
-          padding: 28,
+          borderRadius: 20,
+          padding: 20,
           border: "1px solid #e5e5e5",
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 20 }}>
+        <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 10 }}>
           {team === "first" ? day.firstTeamName : day.secondTeamName}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {items.map((event) => (
-            <div
-              key={event.id}
-              draggable
-              onDragStart={() => setDragged({ event, dayId: day.id })}
-              style={{
-                background: "#fff",
-                borderRadius: 20,
-                padding: 20,
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <button onClick={() => deleteEvent(event.id)}>🗑</button>
-
-              <div style={{ fontSize: 28, fontWeight: 800 }}>
-                {event.time}
-              </div>
-
-              <div>{event.place}</div>
-              <div>{event.title}</div>
-            </div>
-          ))}
-        </div>
+        {items.map((event) => (
+          <div
+            key={event.id}
+            draggable
+            onDragStart={() => setDragged({ event, dayId: day.id })}
+            style={{
+              padding: 10,
+              border: "1px solid #ddd",
+              borderRadius: 10,
+              marginBottom: 10,
+            }}
+          >
+            <button onClick={() => deleteEvent(event.id)}>🗑</button>
+            <div>{event.time}</div>
+            <div>{event.title}</div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -145,27 +190,87 @@ export default function Page() {
   if (!isClient) return null;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 20 }}>
       <h1>🎭 Dance Ops</h1>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 24,
-        }}
-      >
-        {days.map((day) => (
-          <div key={day.id} style={{ width: "100%" }}>
-            <h2>{day.date}</h2>
+      {/* ===== ADMIN PANEL ===== */}
+      <div style={{ border: "2px solid black", padding: 20, marginBottom: 30 }}>
+        <h2>🎛 Admin Panel</h2>
 
-            <div style={{ display: "flex", gap: 24 }}>
-              {renderColumn(day, "first")}
-              {renderColumn(day, "second")}
-            </div>
-          </div>
-        ))}
+        <h3>📅 Add Day</h3>
+        <input
+          placeholder="date"
+          value={newDay.date}
+          onChange={(e) =>
+            setNewDay({ ...newDay, date: e.target.value })
+          }
+        />
+        <input
+          placeholder="first team"
+          value={newDay.first_team_name}
+          onChange={(e) =>
+            setNewDay({ ...newDay, first_team_name: e.target.value })
+          }
+        />
+        <input
+          placeholder="second team"
+          value={newDay.second_team_name}
+          onChange={(e) =>
+            setNewDay({ ...newDay, second_team_name: e.target.value })
+          }
+        />
+        <button onClick={addDay}>Add Day</button>
+
+        <h3>🎭 Add Event</h3>
+        <input
+          placeholder="title"
+          value={newEvent.title}
+          onChange={(e) =>
+            setNewEvent({ ...newEvent, title: e.target.value })
+          }
+        />
+        <input
+          placeholder="time"
+          value={newEvent.time}
+          onChange={(e) =>
+            setNewEvent({ ...newEvent, time: e.target.value })
+          }
+        />
+        <input
+          placeholder="day_id"
+          type="number"
+          value={newEvent.day_id}
+          onChange={(e) =>
+            setNewEvent({
+              ...newEvent,
+              day_id: Number(e.target.value),
+            })
+          }
+        />
+        <select
+          value={newEvent.team}
+          onChange={(e) =>
+            setNewEvent({ ...newEvent, team: e.target.value })
+          }
+        >
+          <option value="first">first</option>
+          <option value="second">second</option>
+        </select>
+
+        <button onClick={addEvent}>Add Event</button>
       </div>
+
+      {/* ===== DAYS ===== */}
+      {days.map((day) => (
+        <div key={day.id} style={{ marginBottom: 40 }}>
+          <h2>{day.date}</h2>
+
+          <div style={{ display: "flex", gap: 20 }}>
+            {renderColumn(day, "first")}
+            {renderColumn(day, "second")}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
