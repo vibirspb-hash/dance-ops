@@ -33,7 +33,8 @@ export default function Page() {
     dayId: number;
   } | null>(null);
 
-  const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
+  const [editingEvent, setEditingEvent] =
+    useState<EventType | null>(null);
 
   const [editForm, setEditForm] = useState({
     title: "",
@@ -52,24 +53,32 @@ export default function Page() {
   }, [isClient]);
 
   async function loadData() {
-    const { data: daysData } = await supabase.from("days").select("*");
+    const { data: daysData } = await supabase
+      .from("days")
+      .select("*");
 
-    const { data: eventsData } = await supabase.from("events").select("*");
+    const { data: eventsData } = await supabase
+      .from("events")
+      .select("*");
 
-    const formatted: DayType[] = (daysData || []).map((day: any) => ({
-      id: day.id,
-      date: day.date,
-      firstTeamName: day.first_team_name,
-      secondTeamName: day.second_team_name,
-      boards: {
-        first: (eventsData || []).filter(
-          (e: any) => e.day_id === day.id && e.team === "first"
-        ),
-        second: (eventsData || []).filter(
-          (e: any) => e.day_id === day.id && e.team === "second"
-        ),
-      },
-    }));
+    const formatted: DayType[] = (daysData || []).map(
+      (day: any) => ({
+        id: day.id,
+        date: day.date,
+        firstTeamName: day.first_team_name,
+        secondTeamName: day.second_team_name,
+        boards: {
+          first: (eventsData || []).filter(
+            (e: any) =>
+              e.day_id === day.id && e.team === "first"
+          ),
+          second: (eventsData || []).filter(
+            (e: any) =>
+              e.day_id === day.id && e.team === "second"
+          ),
+        },
+      })
+    );
 
     setDays(formatted);
   }
@@ -78,7 +87,10 @@ export default function Page() {
   // EVENTS
   // =========================
 
-  async function addEvent(dayId: number, team: "first" | "second") {
+  async function addEvent(
+    dayId: number,
+    team: "first" | "second"
+  ) {
     await supabase.from("events").insert([
       {
         title: "new event",
@@ -145,7 +157,10 @@ export default function Page() {
   // DRAG
   // =========================
 
-  async function onDrop(dayId: number, team: "first" | "second") {
+  async function onDrop(
+    dayId: number,
+    team: "first" | "second"
+  ) {
     if (!dragged) return;
 
     await supabase
@@ -165,28 +180,47 @@ export default function Page() {
   // UI
   // =========================
 
-  function renderEvent(event: EventType, dayId: number) {
+  function renderEvent(
+    event: EventType,
+    dayId: number
+  ) {
     return (
       <div key={event.id} style={{ marginBottom: 10 }}>
         <div
           draggable
-          onDragStart={() => setDragged({ event, dayId })}
+          onDragStart={() =>
+            setDragged({ event, dayId })
+          }
           onClick={() => startEdit(event)}
           style={eventCard}
         >
           <div>
-            <div style={timeStyle}>{event.time}</div>
+            <div style={timeStyle}>
+              {event.time}
+            </div>
 
-            <div style={{ fontWeight: 600 }}>{event.title}</div>
+            <div style={{ fontWeight: 600 }}>
+              {event.title}
+            </div>
 
             {event.place && (
-              <div style={{ fontSize: 12, color: "#777" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#777",
+                }}
+              >
                 {event.place}
               </div>
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -218,7 +252,10 @@ export default function Page() {
     );
   }
 
-  function renderColumn(day: DayType, team: "first" | "second") {
+  function renderColumn(
+    day: DayType,
+    team: "first" | "second"
+  ) {
     const items = day.boards[team];
 
     return (
@@ -234,13 +271,19 @@ export default function Page() {
               : day.secondTeamName}
           </div>
 
-          <button onClick={() => addEvent(day.id, team)}>
+          <button
+            onClick={() =>
+              addEvent(day.id, team)
+            }
+          >
             ➕
           </button>
         </div>
 
         <div style={{ marginTop: 12 }}>
-          {items.map((event) => renderEvent(event, day.id))}
+          {items.map((event) =>
+            renderEvent(event, day.id)
+          )}
         </div>
       </div>
     );
@@ -250,17 +293,28 @@ export default function Page() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={{ marginBottom: 30 }}>🎭 Dance Ops</h1>
+      <h1 style={{ marginBottom: 30 }}>
+        🎭 Dance Ops
+      </h1>
 
       {days.map((day) => (
-        <div key={day.id} style={{ marginBottom: 40 }}>
-          <h2 style={{ marginBottom: 16 }}>{day.date}</h2>
+        <div
+          key={day.id}
+          style={{ marginBottom: 40 }}
+        >
+          <h2 style={{ marginBottom: 16 }}>
+            {day.date}
+          </h2>
 
           <div
             style={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns:
+                typeof window !== "undefined" &&
+                window.innerWidth < 768
+                  ? "1fr"
+                  : "1fr 1fr",
               gap: 20,
-              flexWrap: "wrap",
             }}
           >
             {renderColumn(day, "first")}
@@ -324,10 +378,21 @@ export default function Page() {
               style={inputStyle}
             />
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={saveEdit}>Save</button>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+              }}
+            >
+              <button onClick={saveEdit}>
+                Save
+              </button>
 
-              <button onClick={() => setEditingEvent(null)}>
+              <button
+                onClick={() =>
+                  setEditingEvent(null)
+                }
+              >
                 Close
               </button>
             </div>
@@ -349,12 +414,13 @@ const pageStyle: React.CSSProperties = {
 };
 
 const columnStyle: React.CSSProperties = {
-  flex: "1 1 320px",
+  width: "100%",
   background: "#fff",
   border: "1px solid #e5e5e5",
   borderRadius: 18,
   padding: 16,
   minHeight: 200,
+  boxSizing: "border-box",
 };
 
 const columnHeader: React.CSSProperties = {
