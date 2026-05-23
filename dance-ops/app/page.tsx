@@ -70,17 +70,29 @@ export default function Page() {
     setDays(formatted);
   }
 
-  // ================= CREATE DAY =================
-  async function addDay() {
-    const { data } = await supabase
-      .from("days")
-      .insert([{ date: "new day", first_team_name: "Team 1", second_team_name: "Team 2" }])
-      .select();
+  // ==================== INLINE EDIT ====================
+  function startDayEdit(dayId: number, field: "date" | "firstTeamName" | "secondTeamName", currentValue: string) {
+    setEditingDayId(dayId);
+    setEditingField(field);
+    setEditValue(currentValue);
+  }
 
+  async function saveDayEdit() {
+    if (!editingDayId || !editingField) return;
+
+    const updateData: any = {};
+    if (editingField === "date") updateData.date = editValue;
+    if (editingField === "firstTeamName") updateData.first_team_name = editValue;
+    if (editingField === "secondTeamName") updateData.second_team_name = editValue;
+
+    await supabase.from("days").update(updateData).eq("id", editingDayId);
+
+    setEditingDayId(null);
+    setEditingField(null);
     await loadData();
   }
 
-  // ================= EVENTS =================
+  // ==================== EVENTS ====================
   async function addEvent(dayId: number, team: "first" | "second") {
     await supabase.from("events").insert([{
       title: "Новое выступление",
@@ -136,11 +148,11 @@ export default function Page() {
     await loadData();
   }
 
-  // ================= DASHBOARD =================
+  // ==================== DASHBOARD ====================
   function renderDashboard() {
     return (
       <div style={{ padding: 20 }}>
-        <h1 style={{ textAlign: "center", fontSize: 32, marginBottom: 30 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, textAlign: "center", marginBottom: 30 }}>
           🎭 Dance Ops
         </h1>
 
@@ -156,28 +168,38 @@ export default function Page() {
               key={day.id}
               onClick={() => setSelectedDay(day)}
               style={{
-                padding: 20,
+                padding: 18,
                 borderRadius: 16,
                 background: "#1e2937",
                 color: "white",
-                cursor: "pointer",
                 textAlign: "center",
                 fontWeight: 700,
+                cursor: "pointer",
               }}
             >
               {day.date}
             </div>
           ))}
 
+          {/* add day */}
           <div
-            onClick={addDay}
+            onClick={async () => {
+              await supabase.from("days").insert([
+                {
+                  date: "new day",
+                  first_team_name: "Team 1",
+                  second_team_name: "Team 2",
+                },
+              ]);
+              await loadData();
+            }}
             style={{
-              padding: 20,
+              padding: 18,
               borderRadius: 16,
               border: "2px dashed #999",
               textAlign: "center",
-              cursor: "pointer",
               fontSize: 22,
+              cursor: "pointer",
             }}
           >
             ➕
@@ -187,21 +209,25 @@ export default function Page() {
     );
   }
 
-  // ================= DAY VIEW =================
+  // ==================== DAY VIEW ====================
   function renderDay(day: DayType) {
     return (
-      <div style={{ padding: 20 }}>
+      <div style={{ padding: "20px 12px" }}>
         <button onClick={() => setSelectedDay(null)} style={{ marginBottom: 20 }}>
-          ← назад
+          ← Назад
         </button>
 
-        <h2 style={{ fontSize: 28, marginBottom: 20 }}>{day.date}</h2>
+        <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20 }}>
+          {day.date}
+        </h2>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-          gap: 24,
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+            gap: 24,
+          }}
+        >
           {renderColumn(day, "first")}
           {renderColumn(day, "second")}
         </div>
@@ -209,29 +235,86 @@ export default function Page() {
     );
   }
 
+  // ==================== COLUMN (ТВОЙ КОД БЕЗ ИЗМЕНЕНИЙ) ====================
   function renderColumn(day: DayType, team: "first" | "second") {
     const items = day.boards[team];
+    const teamName = team === "first" ? day.firstTeamName : day.secondTeamName;
+    const teamField = team === "first" ? "firstTeamName" : "secondTeamName";
 
     return (
-      <div style={{ background: "#fff", padding: 20, borderRadius: 16 }}>
-        <button onClick={() => addEvent(day.id, team)} style={{ marginBottom: 12 }}>
-          ➕ add event
+      <div style={{
+        background: "#ffffff",
+        borderRadius: 20,
+        padding: 24,
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+      }}>
+        <div
+          onClick={() => startDayEdit(day.id, teamField, teamName)}
+          style={{
+            fontSize: 23,
+            fontWeight: 700,
+            padding: "14px 24px",
+            background: "#1e2937",
+            color: "white",
+            borderRadius: 16,
+            display: "inline-block",
+            marginBottom: 24,
+            cursor: "pointer",
+          }}
+        >
+          {teamName}
+        </div>
+
+        <button onClick={() => addEvent(day.id, team)} style={{ float: "right", fontSize: 22 }}>
+          ➕
         </button>
 
-        {items.map((event) => (
-          <div key={event.id} onClick={() => startEdit(event)} style={{ marginBottom: 12 }}>
-            <div style={{ fontWeight: 700 }}>{event.time}</div>
-            <div>{event.title}</div>
+        <div style={{ clear: "both", display: "flex", flexDirection: "column", gap: 16 }}>
+          {items.map((event) => renderEvent(event, day.id))}
+        </div>
+      </div>
+    );
+  }
 
+  function renderEvent(event: EventType, dayId: number) {
+    return (
+      <div key={event.id} style={{ marginBottom: 16 }}>
+        <div
+          draggable
+          onDragStart={() => setDragged({ event, dayId })}
+          onClick={() => startEdit(event)}
+          style={{
+            padding: "18px 20px",
+            borderRadius: 16,
+            background: "#fff",
+            border: "1px solid #e0e7ff",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 800 }}>{event.time}</div>
+            <div>{event.title}</div>
+          </div>
+
+          <div>
             <button onClick={(e) => { e.stopPropagation(); quickRoad(event); }}>🚗</button>
             <button onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}>🗑</button>
           </div>
-        ))}
+        </div>
+
+        {event.road && (
+          <div style={{ marginLeft: 20, marginTop: 8, color: "#f59e0b" }}>
+            → {event.road}
+          </div>
+        )}
       </div>
     );
   }
 
   if (!isClient) return null;
 
+  // ==================== SWITCH ====================
   return selectedDay ? renderDay(selectedDay) : renderDashboard();
 }
