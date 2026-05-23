@@ -33,13 +33,17 @@ export default function Page() {
     dayId: number;
   } | null>(null);
 
-  // ===== EDIT EVENT =====
+  // ===== EVENT EDIT =====
   const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
-  const [editForm, setEditForm] = useState({
+  const [editEventForm, setEditEventForm] = useState({
     title: "",
     time: "",
     place: "",
   });
+
+  // ===== DAY EDIT =====
+  const [editingDay, setEditingDay] = useState<DayType | null>(null);
+  const [dayEditValue, setDayEditValue] = useState("");
 
   useEffect(() => {
     setIsClient(true);
@@ -72,7 +76,8 @@ export default function Page() {
     setDays(formatted);
   }
 
-  // ===== ADD DAY =====
+  // ================= DAYS =================
+
   async function addDay() {
     await supabase.from("days").insert([
       {
@@ -85,14 +90,31 @@ export default function Page() {
     await loadData();
   }
 
-  // ===== DELETE DAY =====
   async function deleteDay(dayId: number) {
     await supabase.from("events").delete().eq("day_id", dayId);
     await supabase.from("days").delete().eq("id", dayId);
     await loadData();
   }
 
-  // ===== ADD EVENT =====
+  function startEditDay(day: DayType) {
+    setEditingDay(day);
+    setDayEditValue(day.date);
+  }
+
+  async function saveDay() {
+    if (!editingDay) return;
+
+    await supabase
+      .from("days")
+      .update({ date: dayEditValue })
+      .eq("id", editingDay.id);
+
+    setEditingDay(null);
+    await loadData();
+  }
+
+  // ================= EVENTS =================
+
   async function addEvent(dayId: number, team: "first" | "second") {
     await supabase.from("events").insert([
       {
@@ -106,31 +128,29 @@ export default function Page() {
     await loadData();
   }
 
-  // ===== DELETE EVENT =====
   async function deleteEvent(eventId: number) {
     await supabase.from("events").delete().eq("id", eventId);
     await loadData();
   }
 
-  // ===== EDIT EVENT =====
-  function startEdit(event: EventType) {
+  function startEditEvent(event: EventType) {
     setEditingEvent(event);
-    setEditForm({
+    setEditEventForm({
       title: event.title || "",
       time: event.time || "",
       place: event.place || "",
     });
   }
 
-  async function saveEdit() {
+  async function saveEvent() {
     if (!editingEvent) return;
 
     await supabase
       .from("events")
       .update({
-        title: editForm.title,
-        time: editForm.time,
-        place: editForm.place,
+        title: editEventForm.title,
+        time: editEventForm.time,
+        place: editEventForm.place,
       })
       .eq("id", editingEvent.id);
 
@@ -138,7 +158,8 @@ export default function Page() {
     await loadData();
   }
 
-  // ===== DROP =====
+  // ================= DRAG =================
+
   async function onDrop(dayId: number, team: "first" | "second") {
     if (!dragged) return;
 
@@ -167,7 +188,7 @@ export default function Page() {
           border: "1px solid #e5e5e5",
         }}
       >
-        {/* COLUMN HEADER */}
+        {/* HEADER */}
         <div
           style={{
             display: "flex",
@@ -188,7 +209,7 @@ export default function Page() {
             key={event.id}
             draggable
             onDragStart={() => setDragged({ event, dayId: day.id })}
-            onClick={() => startEdit(event)}
+            onClick={() => startEditEvent(event)}
             style={{
               padding: 10,
               border: "1px solid #ddd",
@@ -225,16 +246,16 @@ export default function Page() {
         <div key={day.id} style={{ marginBottom: 40 }}>
           {/* DAY HEADER */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 style={{ margin: 0 }}>{day.date}</h2>
+            <h2
+              style={{ margin: 0, cursor: "pointer" }}
+              onClick={() => startEditDay(day)}
+            >
+              {day.date}
+            </h2>
 
             <button onClick={addDay}>➕</button>
 
-            <button
-              onClick={() => deleteDay(day.id)}
-              style={{ marginLeft: 10 }}
-            >
-              🗑
-            </button>
+            <button onClick={() => deleteDay(day.id)}>🗑</button>
           </div>
 
           {/* COLUMNS */}
@@ -245,7 +266,7 @@ export default function Page() {
         </div>
       ))}
 
-      {/* EDIT MODAL */}
+      {/* EVENT MODAL */}
       {editingEvent && (
         <div
           style={{
@@ -261,32 +282,70 @@ export default function Page() {
             <h3>Edit Event</h3>
 
             <input
+              value={editEventForm.title}
+              onChange={(e) =>
+                setEditEventForm({
+                  ...editEventForm,
+                  title: e.target.value,
+                })
+              }
               placeholder="title"
-              value={editForm.title}
-              onChange={(e) =>
-                setEditForm({ ...editForm, title: e.target.value })
-              }
             />
 
             <input
+              value={editEventForm.time}
+              onChange={(e) =>
+                setEditEventForm({
+                  ...editEventForm,
+                  time: e.target.value,
+                })
+              }
               placeholder="time"
-              value={editForm.time}
-              onChange={(e) =>
-                setEditForm({ ...editForm, time: e.target.value })
-              }
             />
 
             <input
-              placeholder="place"
-              value={editForm.place}
+              value={editEventForm.place}
               onChange={(e) =>
-                setEditForm({ ...editForm, place: e.target.value })
+                setEditEventForm({
+                  ...editEventForm,
+                  place: e.target.value,
+                })
               }
+              placeholder="place"
             />
 
             <div style={{ marginTop: 10 }}>
-              <button onClick={saveEdit}>Save</button>
+              <button onClick={saveEvent}>Save</button>
               <button onClick={() => setEditingEvent(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DAY MODAL */}
+      {editingDay && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+            <h3>Edit Day</h3>
+
+            <input
+              value={dayEditValue}
+              onChange={(e) => setDayEditValue(e.target.value)}
+              placeholder="day name"
+            />
+
+            <div style={{ marginTop: 10 }}>
+              <button onClick={saveDay}>Save</button>
+              <button onClick={() => setEditingDay(null)}>Cancel</button>
             </div>
           </div>
         </div>
