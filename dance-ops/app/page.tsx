@@ -45,6 +45,13 @@ export default function Page() {
   const [editingDay, setEditingDay] = useState<DayType | null>(null);
   const [dayEditValue, setDayEditValue] = useState("");
 
+  // ===== TEAM EDIT =====
+  const [editingTeam, setEditingTeam] = useState<{
+    dayId: number;
+    field: "first_team_name" | "second_team_name";
+    value: string;
+  } | null>(null);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -110,6 +117,34 @@ export default function Page() {
       .eq("id", editingDay.id);
 
     setEditingDay(null);
+    await loadData();
+  }
+
+  // ================= TEAMS =================
+
+  function startEditTeam(
+    dayId: number,
+    field: "first_team_name" | "second_team_name",
+    value: string
+  ) {
+    setEditingTeam({
+      dayId,
+      field,
+      value,
+    });
+  }
+
+  async function saveTeam() {
+    if (!editingTeam) return;
+
+    await supabase
+      .from("days")
+      .update({
+        [editingTeam.field]: editingTeam.value,
+      })
+      .eq("id", editingTeam.dayId);
+
+    setEditingTeam(null);
     await loadData();
   }
 
@@ -188,19 +223,30 @@ export default function Page() {
           border: "1px solid #e5e5e5",
         }}
       >
-        {/* HEADER */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ fontWeight: 800 }}>
-            {team === "first" ? day.firstTeamName : day.secondTeamName}
-          </div>
+        {/* TEAM HEADER */}
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div
+              style={{ fontWeight: 800, cursor: "pointer" }}
+              onClick={() =>
+                startEditTeam(
+                  day.id,
+                  team === "first"
+                    ? "first_team_name"
+                    : "second_team_name",
+                  team === "first"
+                    ? day.firstTeamName
+                    : day.secondTeamName
+                )
+              }
+            >
+              {team === "first"
+                ? day.firstTeamName
+                : day.secondTeamName}
+            </div>
 
-          <button onClick={() => addEvent(day.id, team)}>➕</button>
+            <button onClick={() => addEvent(day.id, team)}>➕</button>
+          </div>
         </div>
 
         {/* EVENTS */}
@@ -340,12 +386,44 @@ export default function Page() {
             <input
               value={dayEditValue}
               onChange={(e) => setDayEditValue(e.target.value)}
-              placeholder="day name"
             />
 
             <div style={{ marginTop: 10 }}>
               <button onClick={saveDay}>Save</button>
               <button onClick={() => setEditingDay(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TEAM MODAL */}
+      {editingTeam && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+            <h3>Edit Team Name</h3>
+
+            <input
+              value={editingTeam.value}
+              onChange={(e) =>
+                setEditingTeam({
+                  ...editingTeam,
+                  value: e.target.value,
+                })
+              }
+            />
+
+            <div style={{ marginTop: 10 }}>
+              <button onClick={saveTeam}>Save</button>
+              <button onClick={() => setEditingTeam(null)}>Cancel</button>
             </div>
           </div>
         </div>
