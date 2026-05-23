@@ -33,19 +33,20 @@ export default function Page() {
     dayId: number;
   } | null>(null);
 
-  // ===== EVENT EDIT =====
+  // ===== EDIT EVENT =====
   const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
   const [editEventForm, setEditEventForm] = useState({
     title: "",
     time: "",
     place: "",
+    road: "",
   });
 
-  // ===== DAY EDIT =====
+  // ===== EDIT DAY =====
   const [editingDay, setEditingDay] = useState<DayType | null>(null);
   const [dayEditValue, setDayEditValue] = useState("");
 
-  // ===== TEAM EDIT =====
+  // ===== EDIT TEAM =====
   const [editingTeam, setEditingTeam] = useState<{
     dayId: number;
     field: "first_team_name" | "second_team_name";
@@ -127,11 +128,7 @@ export default function Page() {
     field: "first_team_name" | "second_team_name",
     value: string
   ) {
-    setEditingTeam({
-      dayId,
-      field,
-      value,
-    });
+    setEditingTeam({ dayId, field, value });
   }
 
   async function saveTeam() {
@@ -139,9 +136,7 @@ export default function Page() {
 
     await supabase
       .from("days")
-      .update({
-        [editingTeam.field]: editingTeam.value,
-      })
+      .update({ [editingTeam.field]: editingTeam.value })
       .eq("id", editingTeam.dayId);
 
     setEditingTeam(null);
@@ -174,6 +169,7 @@ export default function Page() {
       title: event.title || "",
       time: event.time || "",
       place: event.place || "",
+      road: event.road || "",
     });
   }
 
@@ -186,6 +182,7 @@ export default function Page() {
         title: editEventForm.title,
         time: editEventForm.time,
         place: editEventForm.place,
+        road: editEventForm.road,
       })
       .eq("id", editingEvent.id);
 
@@ -249,32 +246,50 @@ export default function Page() {
           </div>
         </div>
 
-        {/* EVENTS */}
+        {/* EVENTS + ROAD */}
         {items.map((event) => (
-          <div
-            key={event.id}
-            draggable
-            onDragStart={() => setDragged({ event, dayId: day.id })}
-            onClick={() => startEditEvent(event)}
-            style={{
-              padding: 10,
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              marginBottom: 10,
-              cursor: "pointer",
-            }}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteEvent(event.id);
+          <div key={event.id}>
+            <div
+              draggable
+              onDragStart={() => setDragged({ event, dayId: day.id })}
+              onClick={() => startEditEvent(event)}
+              style={{
+                padding: 10,
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                marginBottom: 6,
+                cursor: "pointer",
               }}
             >
-              🗑
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteEvent(event.id);
+                }}
+              >
+                🗑
+              </button>
 
-            <div style={{ fontWeight: 700 }}>{event.time}</div>
-            <div>{event.title}</div>
+              <div style={{ fontWeight: 700 }}>{event.time}</div>
+              <div>{event.title}</div>
+            </div>
+
+            {/* ROAD */}
+            {event.road && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  fontSize: 12,
+                  color: "#666",
+                  marginBottom: 10,
+                  paddingLeft: 10,
+                }}
+              >
+                <span>→</span>
+                <span>{event.road}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -300,7 +315,6 @@ export default function Page() {
             </h2>
 
             <button onClick={addDay}>➕</button>
-
             <button onClick={() => deleteDay(day.id)}>🗑</button>
           </div>
 
@@ -314,17 +328,8 @@ export default function Page() {
 
       {/* EVENT MODAL */}
       {editingEvent && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+        <div style={modalStyle}>
+          <div style={boxStyle}>
             <h3>Edit Event</h3>
 
             <input
@@ -360,27 +365,27 @@ export default function Page() {
               placeholder="place"
             />
 
-            <div style={{ marginTop: 10 }}>
-              <button onClick={saveEvent}>Save</button>
-              <button onClick={() => setEditingEvent(null)}>Cancel</button>
-            </div>
+            <input
+              value={editEventForm.road}
+              onChange={(e) =>
+                setEditEventForm({
+                  ...editEventForm,
+                  road: e.target.value,
+                })
+              }
+              placeholder="road"
+            />
+
+            <button onClick={saveEvent}>Save</button>
+            <button onClick={() => setEditingEvent(null)}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* DAY MODAL */}
       {editingDay && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+        <div style={modalStyle}>
+          <div style={boxStyle}>
             <h3>Edit Day</h3>
 
             <input
@@ -388,28 +393,17 @@ export default function Page() {
               onChange={(e) => setDayEditValue(e.target.value)}
             />
 
-            <div style={{ marginTop: 10 }}>
-              <button onClick={saveDay}>Save</button>
-              <button onClick={() => setEditingDay(null)}>Cancel</button>
-            </div>
+            <button onClick={saveDay}>Save</button>
+            <button onClick={() => setEditingDay(null)}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* TEAM MODAL */}
       {editingTeam && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
-            <h3>Edit Team Name</h3>
+        <div style={modalStyle}>
+          <div style={boxStyle}>
+            <h3>Edit Team</h3>
 
             <input
               value={editingTeam.value}
@@ -421,13 +415,27 @@ export default function Page() {
               }
             />
 
-            <div style={{ marginTop: 10 }}>
-              <button onClick={saveTeam}>Save</button>
-              <button onClick={() => setEditingTeam(null)}>Cancel</button>
-            </div>
+            <button onClick={saveTeam}>Save</button>
+            <button onClick={() => setEditingTeam(null)}>Cancel</button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+const modalStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.5)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const boxStyle: React.CSSProperties = {
+  background: "#fff",
+  padding: 20,
+  borderRadius: 10,
+  minWidth: 300,
+};
