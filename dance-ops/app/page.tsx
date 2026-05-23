@@ -33,9 +33,7 @@ export default function Page() {
     dayId: number;
   } | null>(null);
 
-  const [editingEvent, setEditingEvent] =
-    useState<EventType | null>(null);
-
+  const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     time: "",
@@ -53,67 +51,49 @@ export default function Page() {
   }, [isClient]);
 
   async function loadData() {
-    const { data: daysData } = await supabase
-      .from("days")
-      .select("*");
+    const { data: daysData } = await supabase.from("days").select("*");
+    const { data: eventsData } = await supabase.from("events").select("*");
 
-    const { data: eventsData } = await supabase
-      .from("events")
-      .select("*");
-
-    const formatted: DayType[] = (daysData || []).map(
-      (day: any) => ({
-        id: day.id,
-        date: day.date,
-        firstTeamName: day.first_team_name,
-        secondTeamName: day.second_team_name,
-        boards: {
-          first: (eventsData || []).filter(
-            (e: any) =>
-              e.day_id === day.id && e.team === "first"
-          ),
-          second: (eventsData || []).filter(
-            (e: any) =>
-              e.day_id === day.id && e.team === "second"
-          ),
-        },
-      })
-    );
+    const formatted: DayType[] = (daysData || []).map((day: any) => ({
+      id: day.id,
+      date: day.date,
+      firstTeamName: day.first_team_name,
+      secondTeamName: day.second_team_name,
+      boards: {
+        first: (eventsData || []).filter(
+          (e: any) => e.day_id === day.id && e.team === "first"
+        ),
+        second: (eventsData || []).filter(
+          (e: any) => e.day_id === day.id && e.team === "second"
+        ),
+      },
+    }));
 
     setDays(formatted);
   }
 
-  // =========================
-  // EVENTS
-  // =========================
-
-  async function addEvent(
-    dayId: number,
-    team: "first" | "second"
-  ) {
+  // ==================== CRUD ====================
+  async function addEvent(dayId: number, team: "first" | "second") {
     await supabase.from("events").insert([
       {
-        title: "new event",
-        time: "00:00",
+        title: "Новое выступление",
+        time: "18:00",
         place: "",
         road: "",
         day_id: dayId,
         team,
       },
     ]);
-
     await loadData();
   }
 
   async function deleteEvent(id: number) {
     await supabase.from("events").delete().eq("id", id);
-
     await loadData();
   }
 
   function startEdit(event: EventType) {
     setEditingEvent(event);
-
     setEditForm({
       title: event.title || "",
       time: event.time || "",
@@ -136,265 +116,199 @@ export default function Page() {
       .eq("id", editingEvent.id);
 
     setEditingEvent(null);
-
     await loadData();
   }
 
   async function quickRoad(event: EventType) {
-    const value = prompt("Road time");
-
+    const value = prompt("Время в пути:");
     if (!value) return;
 
-    await supabase
-      .from("events")
-      .update({ road: value })
-      .eq("id", event.id);
-
+    await supabase.from("events").update({ road: value }).eq("id", event.id);
     await loadData();
   }
 
-  // =========================
-  // DRAG
-  // =========================
-
-  async function onDrop(
-    dayId: number,
-    team: "first" | "second"
-  ) {
+  async function onDrop(dayId: number, team: "first" | "second") {
     if (!dragged) return;
 
     await supabase
       .from("events")
-      .update({
-        day_id: dayId,
-        team,
-      })
+      .update({ day_id: dayId, team })
       .eq("id", dragged.event.id);
 
     setDragged(null);
-
     await loadData();
   }
 
-  // =========================
-  // UI
-  // =========================
+  // ==================== STYLES ====================
+  const eventCard: React.CSSProperties = {
+    padding: "16px 20px",
+    border: "1px solid #e0e7ff",
+    borderRadius: 16,
+    background: "#ffffff",
+    boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+    cursor: "grab",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+    transition: "all 0.2s",
+  };
 
-  function renderEvent(
-    event: EventType,
-    dayId: number
-  ) {
-    return (
-      <div key={event.id} style={{ marginBottom: 10 }}>
-        <div
-          draggable
-          onDragStart={() =>
-            setDragged({ event, dayId })
-          }
-          onClick={() => startEdit(event)}
-          style={eventCard}
-        >
-          <div>
-            <div style={timeStyle}>
-              {event.time}
-            </div>
+  const timeStyle: React.CSSProperties = {
+    fontSize: 28,
+    fontWeight: 800,
+    color: "#1e2937",
+    marginBottom: 6,
+  };
 
-            <div style={{ fontWeight: 600 }}>
-              {event.title}
-            </div>
+  const titleStyle: React.CSSProperties = {
+    fontSize: 18,
+    fontWeight: 600,
+    lineHeight: 1.4,
+    color: "#1e2937",
+  };
 
-            {event.place && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#777",
-                }}
-              >
-                {event.place}
-              </div>
-            )}
-          </div>
+  const placeStyle: React.CSSProperties = {
+    fontSize: 15,
+    color: "#475569",
+    marginTop: 4,
+  };
 
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-            }}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                quickRoad(event);
-              }}
-            >
-              🚗
-            </button>
+  const roadStyle: React.CSSProperties = {
+    marginLeft: 16,
+    marginTop: 8,
+    fontSize: 14,
+    color: "#f59e0b",
+    fontWeight: 600,
+  };
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteEvent(event.id);
-              }}
-            >
-              🗑
-            </button>
-          </div>
-        </div>
-
-        {/* ROAD */}
-
-        {event.road && (
-          <div style={roadStyle}>
-            ───→ {event.road}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderColumn(
-    day: DayType,
-    team: "first" | "second"
-  ) {
-    const items = day.boards[team];
-
-    return (
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={() => onDrop(day.id, team)}
-        style={columnStyle}
-      >
-        <div style={columnHeader}>
-          <div style={{ fontWeight: 700 }}>
-            {team === "first"
-              ? day.firstTeamName
-              : day.secondTeamName}
-          </div>
-
-          <button
-            onClick={() =>
-              addEvent(day.id, team)
-            }
-          >
-            ➕
-          </button>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          {items.map((event) =>
-            renderEvent(event, day.id)
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (!isClient) return null;
+  const columnStyle: React.CSSProperties = {
+    background: "#ffffff",
+    borderRadius: 20,
+    padding: 20,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+    minHeight: 600,
+  };
 
   return (
-    <div style={pageStyle}>
-      <h1 style={{ marginBottom: 30 }}>
-        🎭 Dance Ops
-      </h1>
-
-      {days.map((day) => (
-        <div
-          key={day.id}
-          style={{ marginBottom: 40 }}
-        >
-          <h2 style={{ marginBottom: 16 }}>
-            {day.date}
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                typeof window !== "undefined" &&
-                window.innerWidth < 768
-                  ? "1fr"
-                  : "1fr 1fr",
-              gap: 20,
-            }}
-          >
-            {renderColumn(day, "first")}
-            {renderColumn(day, "second")}
-          </div>
+    <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, Arial, sans-serif" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, flexWrap: "wrap", gap: 16 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "#1e2937" }}>🎭 Dance Ops</h1>
         </div>
-      ))}
 
-      {/* MODAL */}
-
-      {editingEvent && (
-        <div style={modal}>
-          <div style={modalBox}>
-            <h3>Edit Event</h3>
-
-            <input
-              value={editForm.title}
-              placeholder="Title"
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  title: e.target.value,
-                })
-              }
-              style={inputStyle}
-            />
-
-            <input
-              value={editForm.time}
-              placeholder="Time"
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  time: e.target.value,
-                })
-              }
-              style={inputStyle}
-            />
-
-            <input
-              value={editForm.place}
-              placeholder="Place"
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  place: e.target.value,
-                })
-              }
-              style={inputStyle}
-            />
-
-            <input
-              value={editForm.road}
-              placeholder="Road"
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  road: e.target.value,
-                })
-              }
-              style={inputStyle}
-            />
+        {days.map((day) => (
+          <div key={day.id} style={{ marginBottom: 60 }}>
+            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1e2937", marginBottom: 20 }}>{day.date}</h2>
 
             <div
               style={{
-                display: "flex",
-                gap: 10,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+                gap: 24,
               }}
             >
-              <button onClick={saveEdit}>
-                Save
-              </button>
+              {/* Первый состав */}
+              <div style={columnStyle}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>{day.firstTeamName}</div>
+                  <button onClick={() => addEvent(day.id, "first")} style={{ padding: "8px 16px", fontSize: 18 }}>➕</button>
+                </div>
 
-              <button
-                onClick={() =>
-                  setEditingEvent(null)
-                }
-              >
-                Close
-              </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {day.boards.first.map((event) => (
+                    <div key={event.id}>
+                      <div
+                        draggable
+                        onDragStart={() => setDragged({ event, dayId: day.id })}
+                        onClick={() => startEdit(event)}
+                        style={eventCard}
+                      >
+                        <div>
+                          <div style={timeStyle}>{event.time}</div>
+                          <div style={titleStyle}>{event.title}</div>
+                          {event.place && <div style={placeStyle}>📍 {event.place}</div>}
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                          <button onClick={(e) => { e.stopPropagation(); quickRoad(event); }}>🚗</button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}>🗑</button>
+                        </div>
+                      </div>
+
+                      {event.road && <div style={roadStyle}>→ {event.road}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Второй состав */}
+              <div style={columnStyle}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>{day.secondTeamName}</div>
+                  <button onClick={() => addEvent(day.id, "second")} style={{ padding: "8px 16px", fontSize: 18 }}>➕</button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {day.boards.second.map((event) => (
+                    <div key={event.id}>
+                      <div
+                        draggable
+                        onDragStart={() => setDragged({ event, dayId: day.id })}
+                        onClick={() => startEdit(event)}
+                        style={eventCard}
+                      >
+                        <div>
+                          <div style={timeStyle}>{event.time}</div>
+                          <div style={titleStyle}>{event.title}</div>
+                          {event.place && <div style={placeStyle}>📍 {event.place}</div>}
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                          <button onClick={(e) => { e.stopPropagation(); quickRoad(event); }}>🚗</button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}>🗑</button>
+                        </div>
+                      </div>
+
+                      {event.road && <div style={roadStyle}>→ {event.road}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal */}
+      {editingEvent && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            padding: 28,
+            borderRadius: 20,
+            width: "90%",
+            maxWidth: 420,
+          }}>
+            <h3 style={{ marginBottom: 20 }}>Редактировать выступление</h3>
+
+            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 12, marginBottom: 12, borderRadius: 10, border: "1px solid #ddd" }} />
+            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 12, marginBottom: 12, borderRadius: 10, border: "1px solid #ddd" }} />
+            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 12, marginBottom: 12, borderRadius: 10, border: "1px solid #ddd" }} />
+            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 12, marginBottom: 20, borderRadius: 10, border: "1px solid #ddd" }} />
+
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={saveEdit} style={{ flex: 1, padding: 14, background: "#4f46e5", color: "white", border: "none", borderRadius: 12, fontWeight: 600 }}>Сохранить</button>
+              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 14, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
             </div>
           </div>
         </div>
@@ -402,79 +316,3 @@ export default function Page() {
     </div>
   );
 }
-
-// =========================
-// STYLES
-// =========================
-
-const pageStyle: React.CSSProperties = {
-  padding: 16,
-  maxWidth: 1400,
-  margin: "0 auto",
-};
-
-const columnStyle: React.CSSProperties = {
-  width: "100%",
-  background: "#fff",
-  border: "1px solid #e5e5e5",
-  borderRadius: 18,
-  padding: 16,
-  minHeight: 200,
-  boxSizing: "border-box",
-};
-
-const columnHeader: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const eventCard: React.CSSProperties = {
-  padding: 12,
-  border: "1px solid #ddd",
-  borderRadius: 12,
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 12,
-  cursor: "pointer",
-  background: "#fff",
-};
-
-const roadStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: "#777",
-  marginLeft: 14,
-  marginTop: 4,
-  marginBottom: 6,
-};
-
-const timeStyle: React.CSSProperties = {
-  fontSize: 20,
-  fontWeight: 700,
-};
-
-const modal: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modalBox: React.CSSProperties = {
-  background: "#fff",
-  padding: 20,
-  borderRadius: 16,
-  width: 320,
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #ccc",
-};
