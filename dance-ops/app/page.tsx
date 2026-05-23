@@ -31,7 +31,6 @@ export default function Page() {
   const [dragged, setDragged] = useState<{ event: EventType; dayId: number } | null>(null);
   const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
 
-  // Для inline редактирования даты и названий составов
   const [editingDayId, setEditingDayId] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<"date" | "firstTeamName" | "secondTeamName" | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -70,7 +69,7 @@ export default function Page() {
     setDays(formatted);
   }
 
-  // ==================== INLINE EDIT DAY / TEAM ====================
+  // ==================== INLINE EDIT ====================
   function startDayEdit(dayId: number, field: "date" | "firstTeamName" | "secondTeamName", currentValue: string) {
     setEditingDayId(dayId);
     setEditingField(field);
@@ -122,16 +121,12 @@ export default function Page() {
 
   async function saveEdit() {
     if (!editingEvent) return;
-
-    await supabase
-      .from("events")
-      .update({
-        title: editForm.title,
-        time: editForm.time,
-        place: editForm.place,
-        road: editForm.road,
-      })
-      .eq("id", editingEvent.id);
+    await supabase.from("events").update({
+      title: editForm.title,
+      time: editForm.time,
+      place: editForm.place,
+      road: editForm.road,
+    }).eq("id", editingEvent.id);
 
     setEditingEvent(null);
     await loadData();
@@ -140,19 +135,13 @@ export default function Page() {
   async function quickRoad(event: EventType) {
     const value = prompt("Время в пути:");
     if (!value) return;
-
     await supabase.from("events").update({ road: value }).eq("id", event.id);
     await loadData();
   }
 
   async function onDrop(dayId: number, team: "first" | "second") {
     if (!dragged) return;
-
-    await supabase
-      .from("events")
-      .update({ day_id: dayId, team })
-      .eq("id", dragged.event.id);
-
+    await supabase.from("events").update({ day_id: dayId, team }).eq("id", dragged.event.id);
     setDragged(null);
     await loadData();
   }
@@ -160,37 +149,37 @@ export default function Page() {
   // ==================== RENDER ====================
   function renderEvent(event: EventType, dayId: number) {
     return (
-      <div key={event.id} style={{ marginBottom: 12 }}>
+      <div key={event.id} style={{ marginBottom: 16 }}>
         <div
           draggable
           onDragStart={() => setDragged({ event, dayId })}
           onClick={() => startEdit(event)}
           style={{
-            padding: "16px 20px",
+            padding: "18px 20px",
             border: "1px solid #e0e7ff",
             borderRadius: 16,
             background: "#ffffff",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+            boxShadow: "0 4px 15px rgba(0,0,0,0.06)",
             cursor: "grab",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
           }}
         >
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{event.time}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 29, fontWeight: 800, color: "#1e2937", marginBottom: 8 }}>{event.time}</div>
             <div style={{ fontSize: 18.5, fontWeight: 600, lineHeight: 1.4 }}>{event.title}</div>
-            {event.place && <div style={{ fontSize: 15, color: "#475569", marginTop: 6 }}>📍 {event.place}</div>}
+            {event.place && <div style={{ fontSize: 15.5, color: "#475569", marginTop: 8 }}>📍 {event.place}</div>}
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={(e) => { e.stopPropagation(); quickRoad(event); }}>🚗</button>
-            <button onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}>🗑</button>
+          <div style={{ display: "flex", gap: 10, marginLeft: 12 }}>
+            <button onClick={(e) => { e.stopPropagation(); quickRoad(event); }} style={{ fontSize: 22 }}>🚗</button>
+            <button onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }} style={{ fontSize: 22 }}>🗑</button>
           </div>
         </div>
 
         {event.road && (
-          <div style={{ marginLeft: 20, marginTop: 8, fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>
+          <div style={{ marginLeft: 24, marginTop: 10, fontSize: 15, color: "#f59e0b", fontWeight: 600 }}>
             → {event.road}
           </div>
         )}
@@ -211,13 +200,12 @@ export default function Page() {
         border: "1px solid #e2e8f0",
         boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
       }}>
-        {/* Название состава — редактируемое */}
         <div
           onClick={() => startDayEdit(day.id, teamField, teamName)}
           style={{
             fontSize: 23,
             fontWeight: 700,
-            padding: "12px 20px",
+            padding: "14px 24px",
             background: "#1e2937",
             color: "white",
             borderRadius: 16,
@@ -241,7 +229,7 @@ export default function Page() {
           )}
         </div>
 
-        <button onClick={() => addEvent(day.id, team)} style={{ float: "right", padding: "10px 16px", fontSize: 20 }}>➕</button>
+        <button onClick={() => addEvent(day.id, team)} style={{ float: "right", padding: "10px 18px", fontSize: 22 }}>➕</button>
 
         <div style={{ clear: "both", display: "flex", flexDirection: "column", gap: 16 }}>
           {items.map((event) => renderEvent(event, day.id))}
@@ -250,14 +238,16 @@ export default function Page() {
     );
   }
 
+  if (!isClient) return <div style={{ padding: 40, textAlign: "center" }}>Загрузка...</div>;
+
   return (
-    <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, Arial, sans-serif" }}>
+    <div style={{ padding: "20px 12px", background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, Arial, sans-serif" }}>
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: "#1e2937", marginBottom: 40 }}>🎭 Dance Ops</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: "#1e2937", textAlign: "center", marginBottom: 40 }}>🎭 Dance Ops</h1>
 
         {days.map((day) => (
           <div key={day.id} style={{ marginBottom: 60 }}>
-            {/* Редактируемая дата */}
+            {/* Дата */}
             <div
               onClick={() => startDayEdit(day.id, "date", day.date)}
               style={{
@@ -267,8 +257,8 @@ export default function Page() {
                 borderRadius: 18,
                 padding: "14px 32px",
                 fontWeight: 800,
-                fontSize: 34,
-                marginBottom: 28,
+                fontSize: 32,
+                marginBottom: 24,
                 cursor: "pointer",
               }}
             >
@@ -280,14 +270,19 @@ export default function Page() {
                   onBlur={saveDayEdit}
                   onKeyDown={(e) => e.key === "Enter" && saveDayEdit()}
                   autoFocus
-                  style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 34, fontWeight: 800 }}
+                  style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 32, fontWeight: 800 }}
                 />
               ) : (
                 day.date
               )}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 28 }}>
+            {/* Колонки — адаптивная сетка */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+              gap: 24,
+            }}>
               {renderColumn(day, "first")}
               {renderColumn(day, "second")}
             </div>
@@ -295,19 +290,20 @@ export default function Page() {
         ))}
       </div>
 
-      {/* Modal редактирования события */}
+      {/* Modal */}
       {editingEvent && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "white", padding: 28, borderRadius: 20, width: "90%", maxWidth: 420 }}>
-            <h3>Редактировать выступление</h3>
-            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 12, margin: "12px 0", borderRadius: 10, border: "1px solid #ddd" }} />
-            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 12, margin: "12px 0", borderRadius: 10, border: "1px solid #ddd" }} />
-            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 12, margin: "12px 0", borderRadius: 10, border: "1px solid #ddd" }} />
-            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 12, margin: "20px 0", borderRadius: 10, border: "1px solid #ddd" }} />
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
+          <div style={{ background: "white", padding: 28, borderRadius: 20, width: "100%", maxWidth: 420 }}>
+            <h3 style={{ marginBottom: 20 }}>Редактировать выступление</h3>
+
+            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #ddd", fontSize: 16 }} />
+            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #ddd", fontSize: 16 }} />
+            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #ddd", fontSize: 16 }} />
+            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 24, borderRadius: 12, border: "1px solid #ddd", fontSize: 16 }} />
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={saveEdit} style={{ flex: 1, padding: 14, background: "#4f46e5", color: "white", border: "none", borderRadius: 12 }}>Сохранить</button>
-              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 14, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
+              <button onClick={saveEdit} style={{ flex: 1, padding: 16, background: "#4f46e5", color: "white", border: "none", borderRadius: 12, fontWeight: 600 }}>Сохранить</button>
+              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 16, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
             </div>
           </div>
         </div>
