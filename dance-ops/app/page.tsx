@@ -40,12 +40,7 @@ export default function Page() {
   const [editingField, setEditingField] = useState<"date" | "firstTeamName" | "secondTeamName" | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const [editForm, setEditForm] = useState({
-    title: "",
-    time: "",
-    place: "",
-    road: "",
-  });
+  const [editForm, setEditForm] = useState({ title: "", time: "", place: "", road: "" });
 
   useEffect(() => {
     setIsClient(true);
@@ -92,11 +87,7 @@ export default function Page() {
 
     const { data } = await supabase
       .from("days")
-      .insert([{ 
-        date: value, 
-        first_team_name: "Я Воробушки", 
-        second_team_name: "Лев и новенькие" 
-      }])
+      .insert([{ date: value, first_team_name: "Я Воробушки", second_team_name: "Лев и новенькие" }])
       .select()
       .single();
 
@@ -243,7 +234,7 @@ export default function Page() {
     );
   }
 
-  // ===================== RENDER FUNCTIONS =====================
+  // ===================== MAIN APP =====================
   function renderEvent(event: EventType, dayId: number) {
     return (
       <div key={event.id} style={{ marginBottom: 16 }}>
@@ -252,7 +243,7 @@ export default function Page() {
           onDragStart={() => setDragged({ event, dayId })}
           onClick={() => startEdit(event)}
           style={{
-            padding: "18px 20px",
+            padding: "20px 22px",
             border: "1px solid #e0e7ff",
             borderRadius: 16,
             background: "#ffffff",
@@ -264,8 +255,8 @@ export default function Page() {
           }}
         >
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 29, fontWeight: 800, color: "#1e2937", marginBottom: 8 }}>{event.time}</div>
-            <div style={{ fontSize: 18.5, fontWeight: 600, lineHeight: 1.4 }}>{event.title}</div>
+            <div style={{ fontSize: 29, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>{event.time}</div>
+            <div style={{ fontSize: 18.5, fontWeight: 600, color: "#1e2937", lineHeight: 1.4 }}>{event.title}</div>
             {event.place && <div style={{ fontSize: 15.5, color: "#334155", marginTop: 8 }}>📍 {event.place}</div>}
           </div>
 
@@ -290,17 +281,13 @@ export default function Page() {
     const teamField = team === "first" ? "firstTeamName" : "secondTeamName";
 
     return (
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={() => onDrop(day.id, team)}
-        style={{
-          background: "#ffffff",
-          borderRadius: 20,
-          padding: 24,
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-        }}
-      >
+      <div style={{
+        background: "#ffffff",
+        borderRadius: 20,
+        padding: 24,
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+      }}>
         <div
           onClick={() => startDayEdit(day.id, teamField, teamName)}
           style={{
@@ -343,13 +330,7 @@ export default function Page() {
       <div style={{ minHeight: "100vh", background: "#f8fafc", padding: "40px 20px", fontFamily: "system-ui, Arial, sans-serif" }}>
         <h1 style={{ textAlign: "center", fontSize: 36, fontWeight: 800, color: "#1e2937", marginBottom: 40 }}>🎭 Dance Ops</h1>
 
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", 
-          gap: 20, 
-          maxWidth: 1100, 
-          margin: "0 auto" 
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 20, maxWidth: 1100, margin: "0 auto" }}>
           {days.map((day) => (
             <button
               key={day.id}
@@ -361,28 +342,24 @@ export default function Page() {
                 border: "1px solid #cbd5e1",
                 fontSize: 26,
                 fontWeight: 800,
-                color: "#1e2937",
+                color: "#0f172a",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
                 minHeight: 140,
-                transition: "all 0.2s",
               }}
             >
               {day.date}
             </button>
           ))}
 
-          <button
-            onClick={addDay}
-            style={{
-              padding: 28,
-              borderRadius: 20,
-              background: "#ffffff",
-              border: "2px dashed #94a3b8",
-              fontSize: 48,
-              color: "#64748b",
-              minHeight: 140,
-            }}
-          >
+          <button onClick={addDay} style={{
+            padding: 28,
+            borderRadius: 20,
+            background: "#ffffff",
+            border: "2px dashed #94a3b8",
+            fontSize: 48,
+            color: "#475569",
+            minHeight: 140,
+          }}>
             +
           </button>
         </div>
@@ -396,36 +373,21 @@ export default function Page() {
 
   return (
     <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh" }}>
-      <button 
-        onClick={() => setSelectedDayId(null)}
-        style={{ marginBottom: 20, fontSize: 18, padding: "10px 16px", borderRadius: 12 }}
-      >
-        ← Назад к датам
-      </button>
+      <button onClick={() => setSelectedDayId(null)} style={{ marginBottom: 20, fontSize: 18 }}>← Назад к датам</button>
 
       <div style={{ marginBottom: 30 }}>
-        <div
-          onClick={() => startDayEdit(selectedDay.id, "date", selectedDay.date)}
-          style={{
-            display: "inline-block",
-            background: "#1e2937",
-            color: "white",
-            borderRadius: 18,
-            padding: "14px 32px",
-            fontSize: 32,
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
+        <div onClick={() => startDayEdit(selectedDay.id, "date", selectedDay.date)} style={{
+          display: "inline-block",
+          background: "#1e2937",
+          color: "white",
+          borderRadius: 18,
+          padding: "14px 32px",
+          fontSize: 32,
+          fontWeight: 800,
+          cursor: "pointer",
+        }}>
           {editingDayId === selectedDay.id && editingField === "date" ? (
-            <input
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={saveDayEdit}
-              onKeyDown={(e) => e.key === "Enter" && saveDayEdit()}
-              autoFocus
-              style={{ background: "transparent", border: "none", color: "white", fontSize: 32, fontWeight: 800 }}
-            />
+            <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveDayEdit} onKeyDown={(e) => e.key === "Enter" && saveDayEdit()} autoFocus style={{ background: "transparent", border: "none", color: "white", fontSize: 32, fontWeight: 800 }} />
           ) : (
             selectedDay.date
           )}
@@ -440,12 +402,12 @@ export default function Page() {
       {editingEvent && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div style={{ background: "white", padding: 28, borderRadius: 20, width: "90%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
-            <h3 style={{ marginBottom: 20, color: "#1e2937" }}>Редактировать выступление</h3>
+            <h3 style={{ marginBottom: 20, color: "#0f172a" }}>Редактировать выступление</h3>
             
-            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
-            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
-            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
-            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 24, borderRadius: 12, border: "1px solid #e2e8f0" }} />
+            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #94a3b8", fontSize: 16, color: "#0f172a" }} />
+            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #94a3b8", fontSize: 16, color: "#0f172a" }} />
+            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #94a3b8", fontSize: 16, color: "#0f172a" }} />
+            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 24, borderRadius: 12, border: "1px solid #94a3b8", fontSize: 16, color: "#0f172a" }} />
 
             <div style={{ display: "flex", gap: 12 }}>
               <button onClick={saveEdit} style={{ flex: 1, padding: 16, background: "#4f46e5", color: "white", border: "none", borderRadius: 12, fontWeight: 600 }}>Сохранить</button>
