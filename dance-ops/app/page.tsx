@@ -179,7 +179,7 @@ export default function Page() {
     await loadData();
   }
 
-  // ===================== AUTH PAGE =====================
+  // ===================== AUTH =====================
   if (!isClient) return <div style={{ padding: 40, textAlign: "center" }}>Загрузка...</div>;
 
   if (!isAuthed) {
@@ -198,7 +198,6 @@ export default function Page() {
           background: "#1e2937",
           borderRadius: 24,
           boxShadow: "0 20px 50px rgba(0,0,0,0.4)",
-          border: "1px solid #334155",
           textAlign: "center",
         }}>
           <div style={{ fontSize: 64, marginBottom: 16 }}>🎭</div>
@@ -244,7 +243,7 @@ export default function Page() {
     );
   }
 
-  // ===================== MAIN APP =====================
+  // ===================== RENDER FUNCTIONS =====================
   function renderEvent(event: EventType, dayId: number) {
     return (
       <div key={event.id} style={{ marginBottom: 16 }}>
@@ -266,8 +265,8 @@ export default function Page() {
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 29, fontWeight: 800, color: "#1e2937", marginBottom: 8 }}>{event.time}</div>
-            <div style={{ fontSize: 18.5, fontWeight: 600 }}>{event.title}</div>
-            {event.place && <div style={{ fontSize: 15.5, color: "#475569", marginTop: 8 }}>📍 {event.place}</div>}
+            <div style={{ fontSize: 18.5, fontWeight: 600, lineHeight: 1.4 }}>{event.title}</div>
+            {event.place && <div style={{ fontSize: 15.5, color: "#334155", marginTop: 8 }}>📍 {event.place}</div>}
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
@@ -341,14 +340,14 @@ export default function Page() {
 
   function renderStartPage() {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", padding: "40px 20px" }}>
+      <div style={{ minHeight: "100vh", background: "#f8fafc", padding: "40px 20px", fontFamily: "system-ui, Arial, sans-serif" }}>
         <h1 style={{ textAlign: "center", fontSize: 36, fontWeight: 800, color: "#1e2937", marginBottom: 40 }}>🎭 Dance Ops</h1>
 
         <div style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", 
           gap: 20, 
-          maxWidth: 1000, 
+          maxWidth: 1100, 
           margin: "0 auto" 
         }}>
           {days.map((day) => (
@@ -359,11 +358,13 @@ export default function Page() {
                 padding: 28,
                 borderRadius: 20,
                 background: "#ffffff",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #cbd5e1",
                 fontSize: 26,
                 fontWeight: 800,
+                color: "#1e2937",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
                 minHeight: 140,
+                transition: "all 0.2s",
               }}
             >
               {day.date}
@@ -397,7 +398,7 @@ export default function Page() {
     <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh" }}>
       <button 
         onClick={() => setSelectedDayId(null)}
-        style={{ marginBottom: 20, fontSize: 18, padding: "10px 16px" }}
+        style={{ marginBottom: 20, fontSize: 18, padding: "10px 16px", borderRadius: 12 }}
       >
         ← Назад к датам
       </button>
@@ -436,19 +437,19 @@ export default function Page() {
         {renderColumn(selectedDay, "second")}
       </div>
 
-      {/* Modal редактирования */}
       {editingEvent && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "white", padding: 28, borderRadius: 20, width: "90%", maxWidth: 420 }}>
-            <h3>Редактировать выступление</h3>
-            <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 12, margin: "10px 0", borderRadius: 10 }} />
-            <input value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 12, margin: "10px 0", borderRadius: 10 }} />
-            <input value={editForm.place} onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 12, margin: "10px 0", borderRadius: 10 }} />
-            <input value={editForm.road} onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 12, margin: "20px 0", borderRadius: 10 }} />
+          <div style={{ background: "white", padding: 28, borderRadius: 20, width: "90%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <h3 style={{ marginBottom: 20, color: "#1e2937" }}>Редактировать выступление</h3>
+            
+            <input value={editForm.title} placeholder="Название" onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
+            <input value={editForm.time} placeholder="Время" onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
+            <input value={editForm.place} placeholder="Место" onChange={(e) => setEditForm({ ...editForm, place: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 12, border: "1px solid #e2e8f0" }} />
+            <input value={editForm.road} placeholder="Время в пути" onChange={(e) => setEditForm({ ...editForm, road: e.target.value })} style={{ width: "100%", padding: 14, marginBottom: 24, borderRadius: 12, border: "1px solid #e2e8f0" }} />
 
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              <button onClick={saveEdit} style={{ flex: 1, padding: 14, background: "#4f46e5", color: "white", border: "none", borderRadius: 12 }}>Сохранить</button>
-              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 14, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={saveEdit} style={{ flex: 1, padding: 16, background: "#4f46e5", color: "white", border: "none", borderRadius: 12, fontWeight: 600 }}>Сохранить</button>
+              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 16, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
             </div>
           </div>
         </div>
