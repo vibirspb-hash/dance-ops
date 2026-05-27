@@ -373,21 +373,45 @@ export default function Page() {
 
   return (
     <div style={{ padding: "20px 16px", background: "#f8fafc", minHeight: "100vh" }}>
-      <button onClick={() => setSelectedDayId(null)} style={{ marginBottom: 20, fontSize: 18 }}>← Назад к датам</button>
+      <button 
+        onClick={() => setSelectedDayId(null)}
+        style={{ 
+          marginBottom: 20, 
+          fontSize: 18, 
+          padding: "10px 18px", 
+          background: "#1e2937", 
+          color: "white", 
+          border: "none", 
+          borderRadius: 12,
+          fontWeight: 600
+        }}
+      >
+        ← Назад к датам
+      </button>
 
       <div style={{ marginBottom: 30 }}>
-        <div onClick={() => startDayEdit(selectedDay.id, "date", selectedDay.date)} style={{
-          display: "inline-block",
-          background: "#1e2937",
-          color: "white",
-          borderRadius: 18,
-          padding: "14px 32px",
-          fontSize: 32,
-          fontWeight: 800,
-          cursor: "pointer",
-        }}>
+        <div
+          onClick={() => startDayEdit(selectedDay.id, "date", selectedDay.date)}
+          style={{
+            display: "inline-block",
+            background: "#1e2937",
+            color: "white",
+            borderRadius: 18,
+            padding: "14px 32px",
+            fontSize: 32,
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
           {editingDayId === selectedDay.id && editingField === "date" ? (
-            <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={saveDayEdit} onKeyDown={(e) => e.key === "Enter" && saveDayEdit()} autoFocus style={{ background: "transparent", border: "none", color: "white", fontSize: 32, fontWeight: 800 }} />
+            <input
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={saveDayEdit}
+              onKeyDown={(e) => e.key === "Enter" && saveDayEdit()}
+              autoFocus
+              style={{ background: "transparent", border: "none", color: "white", fontSize: 32, fontWeight: 800 }}
+            />
           ) : (
             selectedDay.date
           )}
@@ -411,7 +435,20 @@ export default function Page() {
 
             <div style={{ display: "flex", gap: 12 }}>
               <button onClick={saveEdit} style={{ flex: 1, padding: 16, background: "#4f46e5", color: "white", border: "none", borderRadius: 12, fontWeight: 600 }}>Сохранить</button>
-              <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 16, background: "#e2e8f0", border: "none", borderRadius: 12 }}>Отмена</button>
+              <button 
+                onClick={() => setEditingEvent(null)} 
+                style={{ 
+                  flex: 1, 
+                  padding: 16, 
+                  background: "#1e2937", 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: 12, 
+                  fontWeight: 600 
+                }}
+              >
+                Отмена
+              </button>
             </div>
           </div>
         </div>
